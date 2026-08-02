@@ -4,13 +4,16 @@
 Run this whenever you want the playlist refreshed:
 
     python golf_playlist.py --mood chill
+    python golf_playlist.py --target-energy 0.7 --target-valence 0.55 --target-tempo 96
 
 It builds a target audio-feature profile from OutKast's ATLiens and Childish
-Gambino's Camp, shifts that profile toward the requested mood, then adds
-tracks from a curated pool of sonically-similar artists that fit and removes
-tracks already in the playlist that no longer fit.
+Gambino's Camp, shifts that profile toward the requested mood (or explicit
+--target-* overrides), then adds tracks from a curated pool of
+sonically-similar artists that fit and removes tracks already in the
+playlist that no longer fit, filling toward --duration-minutes (default 240,
+i.e. 4 hours).
 
-See README.md for one-time Spotify API setup.
+See README.md for one-time Spotify API setup (run auth_setup.py first).
 """
 import argparse
 import os
@@ -70,7 +73,9 @@ def get_spotify_client() -> spotipy.Spotify:
             + ", ".join(missing)
             + "\nSee README.md for setup instructions."
         )
-    auth_manager = SpotifyOAuth(scope=SCOPE, cache_path=".spotify_cache")
+    auth_manager = SpotifyOAuth(scope=SCOPE, cache_path=".spotify_cache", open_browser=False)
+    if not auth_manager.get_cached_token():
+        sys.exit("No cached Spotify login found. Run auth_setup.py first (see README.md).")
     return spotipy.Spotify(auth_manager=auth_manager)
 
 
@@ -109,8 +114,11 @@ def average_features(features: list) -> dict:
     return profile
 
 
+ALBUMS_PER_ARTIST = 5  # keeps API call volume reasonable while giving enough depth for a 4+ hour playlist
+
+
 def build_candidate_pool(sp: spotipy.Spotify) -> dict:
-    """Return {track_id: track_object} pulled from each seed artist's top tracks."""
+    """Return {track_id: track_object} pulled from each seed artist's top tracks + a few albums."""
     candidates = {}
     for name in SEED_ARTISTS:
         result = sp.search(q=f"artist:{name}", type="artist", limit=1)
@@ -119,9 +127,17 @@ def build_candidate_pool(sp: spotipy.Spotify) -> dict:
             print(f"Warning: couldn't find artist '{name}'", file=sys.stderr)
             continue
         artist_id = items[0]["id"]
-        top = sp.artist_top_tracks(artist_id)["tracks"]
-        for track in top:
+
+        for track in sp.artist_top_tracks(artist_id)["tracks"]:
             candidates[track["id"]] = track
+
+        albums = sp.artist_albums(artist_id, album_type="album", limit=ALBUMS_PER_ARTIST)["items"]
+        for album in albums:
+            for track in sp.album_tracks(album["id"])["items"]:
+                if track["id"] not in candidates:
+                    # album_tracks omits some fields (e.g. popularity) that top-tracks
+                    # includes, but has everything scoring/adding a track needs.
+                    candidates[track["id"]] = track
     return candidates
 
 
@@ -145,13 +161,27 @@ def get_or_create_playlist(sp: spotipy.Spotify, user_id: str, name: str) -> str:
     return playlist["id"]
 
 
-def get_playlist_track_ids(sp: spotipy.Spotify, playlist_id: str) -> list:
-    ids = []
-    results = sp.playlist_items(playlist_id, fields="items.track.id,next")
+def get_playlist_tracks(sp: spotipy.Spotify, playlist_id: str) -> dict:
+    """Return {track_id: duration_ms} for every track currently in the playlist."""
+    tracks = {}
+    results = sp.playlist_items(playlist_id, fields="items.track.id,items.track.duration_ms,next")
     while results:
-        ids.extend(item["track"]["id"] for item in results["items"] if item["track"])
+        for item in results["items"]:
+            if item["track"]:
+                tracks[item["track"]["id"]] = item["track"]["duration_ms"]
         results = sp.next(results) if results.get("next") else None
-    return ids
+    return tracks
+
+
+TARGET_OVERRIDE_FLAGS = {
+    "target_energy": "energy",
+    "target_valence": "valence",
+    "target_danceability": "danceability",
+    "target_acousticness": "acousticness",
+    "target_instrumentalness": "instrumentalness",
+    "target_speechiness": "speechiness",
+    "target_tempo": "tempo",
+}
 
 
 def main():
@@ -160,17 +190,30 @@ def main():
         "--mood",
         choices=sorted(MOOD_PRESETS),
         default="default",
-        help="Mood to filter toward within the ATLiens/Camp sound (default: %(default)s)",
+        help="Mood preset to filter toward within the ATLiens/Camp sound (default: %(default)s)",
     )
     parser.add_argument("--playlist-name", default="Golf Mix (ATLiens/Camp)")
-    parser.add_argument("--size", type=int, default=40, help="Target track count")
+    parser.add_argument(
+        "--duration-minutes",
+        type=float,
+        default=240,
+        help="Target total playlist length in minutes (default: %(default)s, i.e. 4 hours)",
+    )
+    parser.add_argument("--size", type=int, help="Optional hard cap on track count, in addition to duration")
     parser.add_argument(
         "--threshold",
         type=float,
         default=0.35,
-        help="Max distance from the mood profile for a track to be kept (default: %(default)s)",
+        help="Max distance from the target profile for a track to be kept (default: %(default)s)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print planned changes without touching the playlist")
+    for flag, feature_key in TARGET_OVERRIDE_FLAGS.items():
+        parser.add_argument(
+            f"--{flag.replace('_', '-')}",
+            type=float,
+            dest=flag,
+            help=f"Explicit target {feature_key} value, overriding the mood preset",
+        )
     args = parser.parse_args()
 
     sp = get_spotify_client()
@@ -179,19 +222,25 @@ def main():
     print("Building reference sound profile from ATLiens + Camp...")
     baseline = build_reference_profile(sp)
     target = apply_mood(baseline, args.mood)
-    print(f"Target profile ({args.mood}): " + ", ".join(f"{k}={v:.2f}" for k, v in target.items()))
+    for flag, feature_key in TARGET_OVERRIDE_FLAGS.items():
+        value = getattr(args, flag)
+        if value is not None:
+            target[feature_key] = value
+    print("Target profile: " + ", ".join(f"{k}={v:.2f}" for k, v in target.items()))
 
     playlist_id = get_or_create_playlist(sp, user_id, args.playlist_name)
-    existing_ids = get_playlist_track_ids(sp, playlist_id)
+    existing = get_playlist_tracks(sp, playlist_id)
+    existing_ids = list(existing)
 
-    print("Scoring existing playlist tracks against the mood profile...")
+    print("Scoring existing playlist tracks against the target profile...")
     existing_features = {f["id"]: f for f in fetch_audio_features(sp, existing_ids) if f}
     to_remove = [
         tid for tid in existing_ids
         if tid in existing_features and distance(target, existing_features[tid]) > args.threshold
     ]
+    kept_duration_ms = sum(existing[tid] for tid in existing_ids if tid not in to_remove)
 
-    print("Scoring candidate pool...")
+    print("Scoring candidate pool (this pulls each seed artist's top tracks + a few albums)...")
     candidates = build_candidate_pool(sp)
     candidate_ids = [tid for tid in candidates if tid not in existing_ids]
     candidate_features = {f["id"]: f for f in fetch_audio_features(sp, candidate_ids) if f}
@@ -200,16 +249,27 @@ def main():
         (
             (distance(target, feats), tid)
             for tid, feats in candidate_features.items()
+            if distance(target, feats) <= args.threshold
         ),
         key=lambda pair: pair[0],
     )
-    keep_count = max(0, args.size - (len(existing_ids) - len(to_remove)))
-    to_add = [tid for dist, tid in scored if dist <= args.threshold][:keep_count]
 
-    print(f"Removing {len(to_remove)} track(s) that no longer fit the '{args.mood}' mood.")
+    target_duration_ms = args.duration_minutes * 60_000
+    to_add = []
+    total_duration_ms = kept_duration_ms
+    for _, tid in scored:
+        if total_duration_ms >= target_duration_ms:
+            break
+        if args.size is not None and len(existing_ids) - len(to_remove) + len(to_add) >= args.size:
+            break
+        to_add.append(tid)
+        total_duration_ms += candidates[tid].get("duration_ms", 0)
+
+    print(f"Removing {len(to_remove)} track(s) that no longer fit.")
     for tid in to_remove:
         print(f"  - {candidates.get(tid, {}).get('name', tid)}")
-    print(f"Adding {len(to_add)} track(s) that fit the '{args.mood}' mood.")
+    print(f"Adding {len(to_add)} track(s) that fit "
+          f"(playlist will run ~{total_duration_ms / 60_000:.0f} min).")
     for tid in to_add:
         track = candidates[tid]
         artists = ", ".join(a["name"] for a in track["artists"])

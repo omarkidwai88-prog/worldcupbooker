@@ -4,91 +4,134 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Customer Ranking Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#f4f5f7; --panel:#ffffff; --border:#e2e4e9; --text:#1a1d24; --muted:#6b7280;
-    --accent:#3b5bfd; --accent-light:#eef1ff; --good:#16a34a; --bad:#dc2626;
-    --shadow:0 1px 3px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04);
+    --ink:#171a1f; --paper:#eceef1; --surface:#ffffff; --surface-2:#f4f5f7; --border:#d9dce2; --muted:#5c6472;
+    --accent:#a8721f; --accent-soft:#f3e6d2; --accent-ink:#171a1f;
+    --good:#2f7a5c; --good-soft:#e2efe9; --bad:#a83f3f; --bad-soft:#f5e3e2;
+    --medal-1:#c9971f; --medal-1-soft:#faf0d8;
+    --medal-2:#7b8794; --medal-2-soft:#eceef1;
+    --medal-3:#a06a3c; --medal-3-soft:#f2e5d8;
+    --shadow:0 1px 2px rgba(23,26,31,.05), 0 4px 12px rgba(23,26,31,.05);
     --radius:10px;
+    --font-ui:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
   @media (prefers-color-scheme: dark){
-    :root{ --bg:#14161c; --panel:#1c1f28; --border:#2c303c; --text:#e7e9ee; --muted:#9aa1b1;
-      --accent:#7c93ff; --accent-light:#232849; }
+    :root:not([data-theme="light"]){
+      --ink:#e9ebef; --paper:#14161a; --surface:#1b1e24; --surface-2:#20232a; --border:#2c303a; --muted:#9198a6;
+      --accent:#e0ab52; --accent-soft:#3a2f1a; --accent-ink:#14161a;
+      --good:#5cb890; --good-soft:#1c2e27; --bad:#e08585; --bad-soft:#32201f;
+      --medal-1:#e0ab52; --medal-1-soft:#3a2f1a;
+      --medal-2:#9aa3b0; --medal-2-soft:#242730;
+      --medal-3:#c98c5c; --medal-3-soft:#33251b;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e9ebef; --paper:#14161a; --surface:#1b1e24; --surface-2:#20232a; --border:#2c303a; --muted:#9198a6;
+    --accent:#e0ab52; --accent-soft:#3a2f1a; --accent-ink:#14161a;
+    --good:#5cb890; --good-soft:#1c2e27; --bad:#e08585; --bad-soft:#32201f;
+    --medal-1:#e0ab52; --medal-1-soft:#3a2f1a;
+    --medal-2:#9aa3b0; --medal-2-soft:#242730;
+    --medal-3:#c98c5c; --medal-3-soft:#33251b;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg);color:var(--text);}
+  body{margin:0;font-family:var(--font-ui);background:var(--paper);color:var(--ink);
+    -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{text-wrap:balance;}
   header{
     display:flex;align-items:center;justify-content:space-between;gap:16px;
-    padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--border);
+    padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--border);
     position:sticky;top:0;z-index:10;
   }
-  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em;}
-  header .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  header h1{font-size:16px;margin:0;font-weight:800;letter-spacing:-.01em;}
+  header .sub{font-size:12px;color:var(--muted);margin-top:2px;font-weight:500;}
   .header-actions{display:flex;gap:8px;align-items:center;}
   .layout{display:grid;grid-template-columns:340px 1fr;gap:0;min-height:calc(100vh - 57px);}
   @media (max-width:900px){.layout{grid-template-columns:1fr;}}
-  .sidebar{border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:20px;
-    background:var(--panel);overflow-y:auto;}
+  .sidebar{border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:22px;
+    background:var(--surface);overflow-y:auto;}
   .main{padding:20px 24px;overflow-x:auto;}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
-  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 10px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+    margin:0 0 10px;display:flex;align-items:center;gap:7px;}
+  .section-title .step{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+    border-radius:50%;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);
+    font-family:var(--font-mono);font-size:9px;font-weight:600;flex:none;}
   .dropzone{
     border:2px dashed var(--border);border-radius:var(--radius);padding:22px 12px;text-align:center;
     cursor:pointer;transition:.15s;font-size:13px;color:var(--muted);
   }
-  .dropzone.drag{border-color:var(--accent);background:var(--accent-light);color:var(--text);}
+  .dropzone.drag{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
   .dropzone strong{color:var(--accent);}
   input[type=file]{display:none;}
   select,input[type=text],input[type=number]{
     width:100%;padding:7px 9px;border-radius:7px;border:1px solid var(--border);
-    background:var(--bg);color:var(--text);font-size:13px;
+    background:var(--surface-2);color:var(--ink);font-size:13px;font-family:var(--font-ui);
   }
   label.field{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
   button{
-    font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:7px 12px;font-size:13px;font-weight:600;
-    background:var(--accent);color:#fff;transition:filter .1s;
+    font-family:var(--font-ui);cursor:pointer;border:none;border-radius:7px;padding:7px 12px;font-size:13px;font-weight:700;
+    background:var(--accent);color:var(--accent-ink);transition:filter .1s;
   }
   button:hover{filter:brightness(1.08);}
-  button.secondary{background:var(--bg);color:var(--text);border:1px solid var(--border);}
-  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:4px 8px;font-size:12px;font-weight:500;}
-  button:disabled{opacity:.45;cursor:not-allowed;}
-  .metric-row{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--bg);}
+  button.secondary{background:var(--surface-2);color:var(--ink);border:1px solid var(--border);}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:4px 8px;font-size:12px;font-weight:600;}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  .metric-row{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--surface-2);}
   .metric-row .top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-  .metric-row .top label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .metric-row .controls{display:flex;align-items:center;gap:8px;margin-top:8px;}
-  .metric-row input[type=range]{flex:1;accent-color:var(--accent);}
-  .metric-row .wnum{width:52px;text-align:right;}
-  .dir-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:11px;}
+  .metric-row .top label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .metric-row .controls{display:flex;align-items:center;gap:10px;margin-top:9px;}
+  .metric-row input[type=range]{
+    flex:1;appearance:none;-webkit-appearance:none;height:4px;border-radius:2px;
+    background:linear-gradient(90deg, var(--accent) 0%, var(--accent) calc(var(--pct,0)*1%), var(--border) calc(var(--pct,0)*1%), var(--border) 100%);
+  }
+  .metric-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--accent);
+    border:2px solid var(--surface);box-shadow:0 0 0 1px var(--accent);cursor:pointer;margin-top:-1px;
+  }
+  .metric-row input[type=range]::-moz-range-thumb{
+    width:15px;height:15px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);
+    box-shadow:0 0 0 1px var(--accent);cursor:pointer;
+  }
+  .metric-row .wnum{width:54px;text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  .dir-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:10.5px;font-family:var(--font-mono);flex:none;}
   .dir-toggle span{padding:3px 7px;cursor:pointer;color:var(--muted);}
-  .dir-toggle span.active{background:var(--accent);color:#fff;}
-  .weight-sum{font-size:11px;color:var(--muted);margin-top:6px;text-align:right;}
+  .dir-toggle span.active{background:var(--accent);color:var(--accent-ink);font-weight:600;}
+  .weight-sum{font-size:11px;color:var(--muted);margin-top:6px;text-align:right;font-family:var(--font-mono);}
   .weight-sum.warn{color:var(--bad);}
-  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--panel);}
-  thead th{position:sticky;top:0;background:var(--panel);z-index:2;}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface);}
+  thead th{position:sticky;top:0;background:var(--surface);z-index:2;}
   th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
-  th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);cursor:pointer;user-select:none;}
-  th:hover{color:var(--text);}
-  tbody tr:hover{background:var(--accent-light);}
-  .rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;
-    border-radius:6px;background:var(--accent-light);color:var(--accent);font-weight:700;font-size:12px;padding:0 6px;}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;user-select:none;font-weight:700;}
+  th:hover{color:var(--ink);}
+  td{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;}
+  td:nth-child(2){font-family:var(--font-ui);font-weight:600;font-size:13px;}
+  tbody tr:hover{background:var(--surface-2);}
+  .rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:22px;
+    border-radius:6px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:11.5px;padding:0 6px;
+    font-family:var(--font-mono);border:1px solid var(--border);}
+  .rank-badge.medal-1{background:var(--medal-1-soft);color:var(--medal-1);border-color:var(--medal-1);}
+  .rank-badge.medal-2{background:var(--medal-2-soft);color:var(--medal-2);border-color:var(--medal-2);}
+  .rank-badge.medal-3{background:var(--medal-3-soft);color:var(--medal-3);border-color:var(--medal-3);}
   .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;
     color:var(--muted);text-align:center;gap:8px;}
-  .empty-state svg{opacity:.5;margin-bottom:8px;}
+  .empty-state svg{opacity:.5;margin-bottom:8px;color:var(--accent);}
   .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
   .toolbar .search{max-width:260px;}
   .scenario-list{display:flex;flex-direction:column;gap:6px;}
   .scenario-item{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-radius:7px;
-    border:1px solid var(--border);font-size:12.5px;background:var(--bg);}
-  .scenario-item.active{border-color:var(--accent);background:var(--accent-light);}
-  .scenario-item .name{cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    border:1px solid var(--border);font-size:12.5px;background:var(--surface-2);}
+  .scenario-item.active{border-color:var(--accent);background:var(--accent-soft);}
+  .scenario-item .name{cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
   .scenario-item .btns{display:flex;gap:4px;}
-  .pill{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--accent-light);color:var(--accent);font-weight:600;}
+  .pill{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:700;}
   .hint{font-size:11.5px;color:var(--muted);line-height:1.5;}
   .compare-cell{color:var(--muted);font-size:11px;}
   .sheet-picker{display:flex;gap:8px;align-items:center;margin-top:8px;}
-  .badge-count{background:var(--accent);color:#fff;border-radius:99px;font-size:10px;padding:1px 6px;margin-left:6px;}
+  .badge-count{background:var(--accent);color:var(--accent-ink);border-radius:99px;font-size:10px;font-family:var(--font-mono);padding:1px 6px;margin-left:2px;}
   ::-webkit-scrollbar{width:9px;height:9px;}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
 </style>
@@ -111,7 +154,7 @@
   <aside class="sidebar">
 
     <div>
-      <p class="section-title">1. Data source</p>
+      <p class="section-title"><span class="step">1</span> Data source</p>
       <div class="dropzone" id="dropzone">
         <div><strong>Click to upload</strong> or drag a file here</div>
         <div style="margin-top:4px;">.xlsx, .xls, .csv supported</div>
@@ -125,19 +168,19 @@
     </div>
 
     <div id="idColumnBlock" style="display:none;">
-      <p class="section-title">2. Customer identifier</p>
+      <p class="section-title"><span class="step">2</span> Customer identifier</p>
       <select id="idColumnSelect"></select>
     </div>
 
     <div id="metricsBlock" style="display:none;">
-      <p class="section-title">3. Metrics &amp; weights <span class="badge-count" id="metricCount">0</span></p>
+      <p class="section-title"><span class="step">3</span> Metrics &amp; weights <span class="badge-count" id="metricCount">0</span></p>
       <div id="metricsList"></div>
       <div class="weight-sum" id="weightSum"></div>
       <button class="secondary" id="equalizeBtn" style="margin-top:8px;width:100%;">Equalize weights</button>
     </div>
 
     <div id="scenarioBlock" style="display:none;">
-      <p class="section-title">4. Scenarios</p>
+      <p class="section-title"><span class="step">4</span> Scenarios</p>
       <div style="display:flex;gap:6px;">
         <input type="text" id="scenarioNameInput" placeholder="Scenario name (e.g. Growth-focused)">
         <button id="saveScenarioBtn">Save</button>
@@ -335,12 +378,12 @@
         <div class="top">
           <label><input type="checkbox" ${m.included?"checked":""} data-act="include" data-idx="${idx}"> ${escapeHtml(m.name)}</label>
           <div class="dir-toggle" data-idx="${idx}">
-            <span data-dir="1" class="${m.direction===1?"active":""}" title="Higher is better">▲ good</span>
-            <span data-dir="-1" class="${m.direction===-1?"active":""}" title="Lower is better">▼ good</span>
+            <span data-dir="1" class="${m.direction===1?"active":""}" title="Higher values score better">▲ high</span>
+            <span data-dir="-1" class="${m.direction===-1?"active":""}" title="Lower values score better">▼ low</span>
           </div>
         </div>
         <div class="controls">
-          <input type="range" min="0" max="100" value="${m.weight}" data-act="weight" data-idx="${idx}">
+          <input type="range" min="0" max="100" value="${m.weight}" style="--pct:${m.weight}" data-act="weight" data-idx="${idx}">
           <input type="number" class="wnum" min="0" max="100" value="${m.weight}" data-act="weightnum" data-idx="${idx}">
         </div>`;
       list.appendChild(row);
@@ -361,6 +404,7 @@
     list.querySelectorAll('[data-act="weight"]').forEach(el => el.addEventListener("input", e=>{
       const idx = +e.target.dataset.idx, val = +e.target.value;
       state.metrics[idx].weight = val;
+      e.target.style.setProperty("--pct", val);
       list.querySelector(`[data-act="weightnum"][data-idx="${idx}"]`).value = val;
       updateWeightSum(); recompute();
     }));
@@ -368,7 +412,9 @@
       const idx = +e.target.dataset.idx;
       let val = Math.max(0, Math.min(100, +e.target.value || 0));
       state.metrics[idx].weight = val;
-      list.querySelector(`[data-act="weight"][data-idx="${idx}"]`).value = val;
+      const rangeEl = list.querySelector(`[data-act="weight"][data-idx="${idx}"]`);
+      rangeEl.value = val;
+      rangeEl.style.setProperty("--pct", val);
       updateWeightSum(); recompute();
     }));
     updateWeightSum();
@@ -487,8 +533,9 @@
         const rawDisplay = c.raw === null ? "—" : formatNum(c.raw);
         return `<td title="normalized ${(c.norm*100).toFixed(0)}% • contributes ${(c.contribution*100).toFixed(1)} pts">${rawDisplay}</td>`;
       }).join("");
+      const medalClass = r.rank <= 3 ? " medal-" + r.rank : "";
       return `<tr>
-        <td><span class="rank-badge">#${r.rank}</span></td>
+        <td><span class="rank-badge${medalClass}">#${r.rank}</span></td>
         <td>${escapeHtml(String(r.customer ?? "—"))}</td>
         ${cells}
         <td><strong>${(r.score*100).toFixed(1)}</strong></td>

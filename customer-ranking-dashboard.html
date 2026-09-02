@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Ranking Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --border:#e2e4e9; --text:#1a1d24; --muted:#6b7280;
+    --accent:#3b5bfd; --accent-light:#eef1ff; --good:#16a34a; --bad:#dc2626;
+    --shadow:0 1px 3px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04);
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#14161c; --panel:#1c1f28; --border:#2c303c; --text:#e7e9ee; --muted:#9aa1b1;
+      --accent:#7c93ff; --accent-light:#232849; }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);}
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:10;
+  }
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em;}
+  header .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .header-actions{display:flex;gap:8px;align-items:center;}
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:0;min-height:calc(100vh - 57px);}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+  .sidebar{border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:20px;
+    background:var(--panel);overflow-y:auto;}
+  .main{padding:20px 24px;overflow-x:auto;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 10px;}
+  .dropzone{
+    border:2px dashed var(--border);border-radius:var(--radius);padding:22px 12px;text-align:center;
+    cursor:pointer;transition:.15s;font-size:13px;color:var(--muted);
+  }
+  .dropzone.drag{border-color:var(--accent);background:var(--accent-light);color:var(--text);}
+  .dropzone strong{color:var(--accent);}
+  input[type=file]{display:none;}
+  select,input[type=text],input[type=number]{
+    width:100%;padding:7px 9px;border-radius:7px;border:1px solid var(--border);
+    background:var(--bg);color:var(--text);font-size:13px;
+  }
+  label.field{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
+  button{
+    font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:7px 12px;font-size:13px;font-weight:600;
+    background:var(--accent);color:#fff;transition:filter .1s;
+  }
+  button:hover{filter:brightness(1.08);}
+  button.secondary{background:var(--bg);color:var(--text);border:1px solid var(--border);}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:4px 8px;font-size:12px;font-weight:500;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  .metric-row{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--bg);}
+  .metric-row .top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .metric-row .top label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .metric-row .controls{display:flex;align-items:center;gap:8px;margin-top:8px;}
+  .metric-row input[type=range]{flex:1;accent-color:var(--accent);}
+  .metric-row .wnum{width:52px;text-align:right;}
+  .dir-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:11px;}
+  .dir-toggle span{padding:3px 7px;cursor:pointer;color:var(--muted);}
+  .dir-toggle span.active{background:var(--accent);color:#fff;}
+  .weight-sum{font-size:11px;color:var(--muted);margin-top:6px;text-align:right;}
+  .weight-sum.warn{color:var(--bad);}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--panel);}
+  thead th{position:sticky;top:0;background:var(--panel);z-index:2;}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);cursor:pointer;user-select:none;}
+  th:hover{color:var(--text);}
+  tbody tr:hover{background:var(--accent-light);}
+  .rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;
+    border-radius:6px;background:var(--accent-light);color:var(--accent);font-weight:700;font-size:12px;padding:0 6px;}
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;
+    color:var(--muted);text-align:center;gap:8px;}
+  .empty-state svg{opacity:.5;margin-bottom:8px;}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .toolbar .search{max-width:260px;}
+  .scenario-list{display:flex;flex-direction:column;gap:6px;}
+  .scenario-item{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-radius:7px;
+    border:1px solid var(--border);font-size:12.5px;background:var(--bg);}
+  .scenario-item.active{border-color:var(--accent);background:var(--accent-light);}
+  .scenario-item .name{cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .scenario-item .btns{display:flex;gap:4px;}
+  .pill{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--accent-light);color:var(--accent);font-weight:600;}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .compare-cell{color:var(--muted);font-size:11px;}
+  .sheet-picker{display:flex;gap:8px;align-items:center;margin-top:8px;}
+  .badge-count{background:var(--accent);color:#fff;border-radius:99px;font-size:10px;padding:1px 6px;margin-left:6px;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Customer Ranking Dashboard</h1>
+    <div class="sub">Upload data, weight your metrics, dense-rank customers</div>
+  </div>
+  <div class="header-actions">
+    <select id="scenarioSelect" style="min-width:180px;"></select>
+    <button class="secondary" id="loadSampleBtn">Load sample data</button>
+    <button id="exportBtn" disabled>Export results (CSV)</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+
+    <div>
+      <p class="section-title">1. Data source</p>
+      <div class="dropzone" id="dropzone">
+        <div><strong>Click to upload</strong> or drag a file here</div>
+        <div style="margin-top:4px;">.xlsx, .xls, .csv supported</div>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+      <div class="sheet-picker" id="sheetPicker" style="display:none;">
+        <label class="field" style="margin:0;flex:0 0 auto;">Sheet:</label>
+        <select id="sheetSelect"></select>
+      </div>
+      <div id="fileStatus" class="hint" style="margin-top:8px;"></div>
+    </div>
+
+    <div id="idColumnBlock" style="display:none;">
+      <p class="section-title">2. Customer identifier</p>
+      <select id="idColumnSelect"></select>
+    </div>
+
+    <div id="metricsBlock" style="display:none;">
+      <p class="section-title">3. Metrics &amp; weights <span class="badge-count" id="metricCount">0</span></p>
+      <div id="metricsList"></div>
+      <div class="weight-sum" id="weightSum"></div>
+      <button class="secondary" id="equalizeBtn" style="margin-top:8px;width:100%;">Equalize weights</button>
+    </div>
+
+    <div id="scenarioBlock" style="display:none;">
+      <p class="section-title">4. Scenarios</p>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="scenarioNameInput" placeholder="Scenario name (e.g. Growth-focused)">
+        <button id="saveScenarioBtn">Save</button>
+      </div>
+      <div class="scenario-list" id="scenarioList" style="margin-top:10px;"></div>
+      <p class="hint" style="margin-top:8px;">Saved scenarios persist in this browser (localStorage) and reapply weights by metric name.</p>
+    </div>
+
+  </aside>
+
+  <main class="main">
+    <div id="emptyState" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      <div><strong>No data loaded yet.</strong></div>
+      <div>Upload an Excel/CSV file, or click "Load sample data" above to try the dashboard.</div>
+    </div>
+
+    <div id="resultsWrap" style="display:none;">
+      <div class="toolbar">
+        <div><span id="rowCount" class="hint"></span></div>
+        <input type="text" id="searchBox" class="search" placeholder="Filter customers...">
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="resultsTable">
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const state = {
+    headers: [], rows: [], idColumn: null,
+    metrics: [],            // {name, included, weight, direction:1|-1}
+    scenarios: {},          // name -> {idColumn, metrics:[...]}
+    activeScenario: null,
+    sortKey: "rank", sortDir: 1,
+    searchTerm: ""
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const SCENARIO_KEY = "crd_scenarios_v1";
+
+  // ---------- persistence ----------
+  function loadScenariosFromStorage(){
+    try{
+      const raw = localStorage.getItem(SCENARIO_KEY);
+      state.scenarios = raw ? JSON.parse(raw) : {};
+    }catch(e){ state.scenarios = {}; }
+  }
+  function persistScenarios(){
+    try{ localStorage.setItem(SCENARIO_KEY, JSON.stringify(state.scenarios)); }catch(e){}
+  }
+
+  // ---------- file handling ----------
+  const dropzone = $("dropzone"), fileInput = $("fileInput");
+  dropzone.addEventListener("click", () => fileInput.click());
+  ["dragenter","dragover"].forEach(evt => dropzone.addEventListener(evt, e=>{
+    e.preventDefault(); dropzone.classList.add("drag");
+  }));
+  ["dragleave","drop"].forEach(evt => dropzone.addEventListener(evt, e=>{
+    e.preventDefault(); dropzone.classList.remove("drag");
+  }));
+  dropzone.addEventListener("drop", e=>{
+    const f = e.dataTransfer.files[0];
+    if(f) handleFile(f);
+  });
+  fileInput.addEventListener("change", e=>{
+    const f = e.target.files[0];
+    if(f) handleFile(f);
+  });
+
+  let workbookCache = null;
+
+  function handleFile(file){
+    $("fileStatus").textContent = "Reading " + file.name + "...";
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:"array"});
+        workbookCache = wb;
+        populateSheetPicker(wb);
+        loadSheet(wb, wb.SheetNames[0]);
+        $("fileStatus").textContent = "Loaded " + file.name;
+      }catch(err){
+        $("fileStatus").textContent = "Could not parse file: " + err.message;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function populateSheetPicker(wb){
+    const picker = $("sheetPicker"), sel = $("sheetSelect");
+    if(wb.SheetNames.length > 1){
+      sel.innerHTML = wb.SheetNames.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+      picker.style.display = "flex";
+      sel.onchange = () => loadSheet(wb, sel.value);
+    }else{
+      picker.style.display = "none";
+    }
+  }
+
+  function loadSheet(wb, sheetName){
+    const ws = wb.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, blankrows:false});
+    if(!json.length){ $("fileStatus").textContent = "Sheet is empty."; return; }
+    const headers = json[0].map((h,i)=> h===null || h==="" ? ("Column "+(i+1)) : String(h));
+    const rows = json.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h,i)=> obj[h] = r[i] === undefined ? null : r[i]);
+      return obj;
+    }).filter(r => Object.values(r).some(v => v !== null && v !== ""));
+
+    state.headers = headers;
+    state.rows = rows;
+    setupColumns();
+  }
+
+  function loadSampleData(){
+    const headers = ["Customer","Annual Revenue","Ticket Volume","CSAT Score","Days Late","Growth %","NPS"];
+    const names = ["Acme Corp","Globex","Initech","Umbrella Inc","Stark Industries","Wayne Enterprises","Hooli","Soylent Co","Wonka Industries","Vandelay Industries","Pied Piper","Massive Dynamic"];
+    const rows = names.map(n => ({
+      "Customer": n,
+      "Annual Revenue": Math.round(50000 + Math.random()*950000),
+      "Ticket Volume": Math.round(2 + Math.random()*80),
+      "CSAT Score": +(2.5 + Math.random()*2.5).toFixed(2),
+      "Days Late": Math.round(Math.random()*30),
+      "Growth %": +(-10 + Math.random()*40).toFixed(1),
+      "NPS": Math.round(-20 + Math.random()*100)
+    }));
+    state.headers = headers;
+    state.rows = rows;
+    $("fileStatus").textContent = "Loaded sample dataset (" + rows.length + " customers).";
+    $("sheetPicker").style.display = "none";
+    setupColumns();
+  }
+  $("loadSampleBtn").addEventListener("click", loadSampleData);
+
+  // ---------- column setup ----------
+  function isNumericColumn(h){
+    let numeric = 0, total = 0;
+    for(const r of state.rows){
+      const v = r[h];
+      if(v === null || v === "") continue;
+      total++;
+      if(typeof v === "number" || (typeof v === "string" && v.trim() !== "" && !isNaN(parseFloat(v)))) numeric++;
+    }
+    return total > 0 && numeric/total >= 0.7;
+  }
+
+  function setupColumns(){
+    const idSel = $("idColumnSelect");
+    idSel.innerHTML = state.headers.map(h=>`<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join("");
+    // guess id column: first non-numeric column
+    const guess = state.headers.find(h => !isNumericColumn(h)) || state.headers[0];
+    idSel.value = guess;
+    state.idColumn = guess;
+    idSel.onchange = () => { state.idColumn = idSel.value; buildMetricsFromColumns(); recompute(); };
+
+    $("idColumnBlock").style.display = "block";
+    buildMetricsFromColumns();
+
+    $("metricsBlock").style.display = "block";
+    $("scenarioBlock").style.display = "block";
+    $("emptyState").style.display = "none";
+    $("resultsWrap").style.display = "block";
+    $("exportBtn").disabled = false;
+
+    renderScenarioList();
+    renderScenarioSelect();
+    recompute();
+  }
+
+  function buildMetricsFromColumns(){
+    const numericCols = state.headers.filter(h => h !== state.idColumn && isNumericColumn(h));
+    const existing = {};
+    state.metrics.forEach(m => existing[m.name] = m);
+    state.metrics = numericCols.map(h => existing[h] || {name:h, included:true, weight:10, direction:1});
+    renderMetrics();
+  }
+
+  function renderMetrics(){
+    const list = $("metricsList");
+    list.innerHTML = "";
+    state.metrics.forEach((m, idx) => {
+      const row = document.createElement("div");
+      row.className = "metric-row";
+      row.innerHTML = `
+        <div class="top">
+          <label><input type="checkbox" ${m.included?"checked":""} data-act="include" data-idx="${idx}"> ${escapeHtml(m.name)}</label>
+          <div class="dir-toggle" data-idx="${idx}">
+            <span data-dir="1" class="${m.direction===1?"active":""}" title="Higher is better">▲ good</span>
+            <span data-dir="-1" class="${m.direction===-1?"active":""}" title="Lower is better">▼ good</span>
+          </div>
+        </div>
+        <div class="controls">
+          <input type="range" min="0" max="100" value="${m.weight}" data-act="weight" data-idx="${idx}">
+          <input type="number" class="wnum" min="0" max="100" value="${m.weight}" data-act="weightnum" data-idx="${idx}">
+        </div>`;
+      list.appendChild(row);
+    });
+    $("metricCount").textContent = state.metrics.filter(m=>m.included).length;
+
+    list.querySelectorAll('[data-act="include"]').forEach(el => el.addEventListener("change", e=>{
+      state.metrics[+e.target.dataset.idx].included = e.target.checked;
+      $("metricCount").textContent = state.metrics.filter(m=>m.included).length;
+      recompute();
+    }));
+    list.querySelectorAll('.dir-toggle').forEach(el => el.addEventListener("click", e=>{
+      const span = e.target.closest("span"); if(!span) return;
+      const idx = +el.dataset.idx;
+      state.metrics[idx].direction = +span.dataset.dir;
+      renderMetrics(); recompute();
+    }));
+    list.querySelectorAll('[data-act="weight"]').forEach(el => el.addEventListener("input", e=>{
+      const idx = +e.target.dataset.idx, val = +e.target.value;
+      state.metrics[idx].weight = val;
+      list.querySelector(`[data-act="weightnum"][data-idx="${idx}"]`).value = val;
+      updateWeightSum(); recompute();
+    }));
+    list.querySelectorAll('[data-act="weightnum"]').forEach(el => el.addEventListener("input", e=>{
+      const idx = +e.target.dataset.idx;
+      let val = Math.max(0, Math.min(100, +e.target.value || 0));
+      state.metrics[idx].weight = val;
+      list.querySelector(`[data-act="weight"][data-idx="${idx}"]`).value = val;
+      updateWeightSum(); recompute();
+    }));
+    updateWeightSum();
+  }
+
+  function updateWeightSum(){
+    const sum = state.metrics.filter(m=>m.included).reduce((s,m)=>s+m.weight,0);
+    const el = $("weightSum");
+    el.textContent = "Total weight: " + sum + (sum===0 ? " — add at least one weight" : " (auto-normalized to 100%)");
+    el.classList.toggle("warn", sum===0);
+  }
+
+  $("equalizeBtn").addEventListener("click", () => {
+    const included = state.metrics.filter(m=>m.included);
+    if(!included.length) return;
+    const w = Math.round(100/included.length);
+    included.forEach(m => m.weight = w);
+    renderMetrics(); recompute();
+  });
+
+  // ---------- ranking engine ----------
+  function toNum(v){
+    if(v === null || v === "" || v === undefined) return null;
+    const n = typeof v === "number" ? v : parseFloat(v);
+    return isNaN(n) ? null : n;
+  }
+
+  function computeRankings(){
+    const active = state.metrics.filter(m => m.included && m.weight > 0);
+    const totalWeight = active.reduce((s,m)=>s+m.weight,0);
+
+    const stats = {};
+    active.forEach(m => {
+      const vals = state.rows.map(r => toNum(r[m.name])).filter(v => v !== null);
+      stats[m.name] = {min: Math.min(...vals), max: Math.max(...vals)};
+    });
+
+    const results = state.rows.map(r => {
+      let score = 0;
+      const contributions = {};
+      active.forEach(m => {
+        const raw = toNum(r[m.name]);
+        const {min, max} = stats[m.name];
+        let norm;
+        if(raw === null) norm = 0;
+        else if(max === min) norm = 1;
+        else norm = m.direction === 1 ? (raw-min)/(max-min) : (max-raw)/(max-min);
+        const contribution = totalWeight > 0 ? (m.weight/totalWeight) * norm : 0;
+        contributions[m.name] = {raw, norm, contribution};
+        score += contribution;
+      });
+      return {customer: r[state.idColumn], score, contributions, raw: r};
+    });
+
+    results.sort((a,b) => b.score - a.score);
+
+    // dense rank
+    let rank = 0, lastScore = null;
+    results.forEach(res => {
+      const rounded = Math.round(res.score * 1e6) / 1e6;
+      if(lastScore === null || rounded !== lastScore){ rank++; lastScore = rounded; }
+      res.rank = rank;
+    });
+
+    return {results, activeMetrics: active};
+  }
+
+  let lastComputation = null;
+
+  function recompute(){
+    if(!state.rows.length || !state.idColumn) return;
+    lastComputation = computeRankings();
+    renderTable(lastComputation);
+  }
+
+  // ---------- table rendering ----------
+  function renderTable(comp){
+    const {results, activeMetrics} = comp;
+    const head = $("tableHead");
+    head.innerHTML = `<th data-key="rank">Rank</th><th data-key="customer">Customer</th>` +
+      activeMetrics.map(m=>`<th data-key="m:${escapeHtml(m.name)}">${escapeHtml(m.name)}</th>`).join("") +
+      `<th data-key="score">Score</th>`;
+
+    head.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      state.sortDir = (state.sortKey === key) ? -state.sortDir : 1;
+      state.sortKey = key;
+      renderTable(comp);
+    }));
+
+    let rows = results.slice();
+    if(state.searchTerm){
+      const t = state.searchTerm.toLowerCase();
+      rows = rows.filter(r => String(r.customer).toLowerCase().includes(t));
+    }
+    rows.sort((a,b) => {
+      let av, bv;
+      if(state.sortKey === "rank"){ av=a.rank; bv=b.rank; }
+      else if(state.sortKey === "customer"){ av=String(a.customer); bv=String(b.customer); }
+      else if(state.sortKey === "score"){ av=a.score; bv=b.score; }
+      else if(state.sortKey.startsWith("m:")){
+        const name = state.sortKey.slice(2);
+        av = a.contributions[name] ? a.contributions[name].raw : null;
+        bv = b.contributions[name] ? b.contributions[name].raw : null;
+      }
+      if(av === null) av = -Infinity; if(bv === null) bv = -Infinity;
+      if(av < bv) return -1*state.sortDir;
+      if(av > bv) return 1*state.sortDir;
+      return 0;
+    });
+
+    const body = $("tableBody");
+    body.innerHTML = rows.map(r => {
+      const cells = activeMetrics.map(m => {
+        const c = r.contributions[m.name];
+        const rawDisplay = c.raw === null ? "—" : formatNum(c.raw);
+        return `<td title="normalized ${(c.norm*100).toFixed(0)}% • contributes ${(c.contribution*100).toFixed(1)} pts">${rawDisplay}</td>`;
+      }).join("");
+      return `<tr>
+        <td><span class="rank-badge">#${r.rank}</span></td>
+        <td>${escapeHtml(String(r.customer ?? "—"))}</td>
+        ${cells}
+        <td><strong>${(r.score*100).toFixed(1)}</strong></td>
+      </tr>`;
+    }).join("");
+
+    $("rowCount").textContent = rows.length + " customer" + (rows.length===1?"":"s") +
+      (activeMetrics.length ? " · ranked on " + activeMetrics.length + " metric" + (activeMetrics.length===1?"":"s") : " · select at least one metric");
+  }
+
+  $("searchBox").addEventListener("input", e => {
+    state.searchTerm = e.target.value;
+    if(lastComputation) renderTable(lastComputation);
+  });
+
+  // ---------- export ----------
+  $("exportBtn").addEventListener("click", () => {
+    if(!lastComputation) return;
+    const {results, activeMetrics} = lastComputation;
+    const header = ["Rank","Customer", ...activeMetrics.map(m=>m.name), "Score"];
+    const lines = [header.join(",")];
+    results.forEach(r => {
+      const row = [r.rank, csvEscape(r.customer),
+        ...activeMetrics.map(m => r.contributions[m.name].raw ?? ""),
+        (r.score*100).toFixed(2)];
+      lines.push(row.join(","));
+    });
+    const blob = new Blob([lines.join("\n")], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "customer_ranking_" + (state.activeScenario || "results") + ".csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ---------- scenarios ----------
+  $("saveScenarioBtn").addEventListener("click", () => {
+    const name = $("scenarioNameInput").value.trim();
+    if(!name) return;
+    state.scenarios[name] = {
+      idColumn: state.idColumn,
+      metrics: state.metrics.map(m => ({...m}))
+    };
+    state.activeScenario = name;
+    persistScenarios();
+    $("scenarioNameInput").value = "";
+    renderScenarioList();
+    renderScenarioSelect();
+  });
+
+  function applyScenario(name){
+    const sc = state.scenarios[name];
+    if(!sc) return;
+    state.activeScenario = name;
+    if(state.headers.includes(sc.idColumn)){
+      state.idColumn = sc.idColumn;
+      $("idColumnSelect").value = sc.idColumn;
+    }
+    const byName = {}; sc.metrics.forEach(m => byName[m.name]=m);
+    state.metrics.forEach(m => {
+      if(byName[m.name]){
+        m.included = byName[m.name].included;
+        m.weight = byName[m.name].weight;
+        m.direction = byName[m.name].direction;
+      }
+    });
+    renderMetrics();
+    renderScenarioList();
+    renderScenarioSelect();
+    recompute();
+  }
+
+  function renderScenarioList(){
+    const wrap = $("scenarioList");
+    const names = Object.keys(state.scenarios);
+    if(!names.length){ wrap.innerHTML = `<div class="hint">No scenarios saved yet.</div>`; return; }
+    wrap.innerHTML = names.map(name => `
+      <div class="scenario-item ${name===state.activeScenario?"active":""}">
+        <span class="name" data-name="${escapeHtml(name)}">${escapeHtml(name)}</span>
+        <div class="btns">
+          <button class="ghost" data-act="apply" data-name="${escapeHtml(name)}">Apply</button>
+          <button class="ghost" data-act="delete" data-name="${escapeHtml(name)}">✕</button>
+        </div>
+      </div>`).join("");
+    wrap.querySelectorAll('[data-act="apply"]').forEach(b => b.addEventListener("click", () => applyScenario(b.dataset.name)));
+    wrap.querySelectorAll('.name').forEach(b => b.addEventListener("click", () => applyScenario(b.dataset.name)));
+    wrap.querySelectorAll('[data-act="delete"]').forEach(b => b.addEventListener("click", () => {
+      delete state.scenarios[b.dataset.name];
+      if(state.activeScenario === b.dataset.name) state.activeScenario = null;
+      persistScenarios();
+      renderScenarioList();
+      renderScenarioSelect();
+    }));
+  }
+
+  function renderScenarioSelect(){
+    const sel = $("scenarioSelect");
+    const names = Object.keys(state.scenarios);
+    sel.innerHTML = `<option value="">— Select scenario —</option>` +
+      names.map(n=>`<option value="${escapeHtml(n)}" ${n===state.activeScenario?"selected":""}>${escapeHtml(n)}</option>`).join("");
+    sel.onchange = () => { if(sel.value) applyScenario(sel.value); };
+  }
+
+  // ---------- utils ----------
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function csvEscape(s){
+    s = String(s ?? "");
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }
+  function formatNum(n){
+    if(typeof n !== "number") return n;
+    return Math.abs(n) >= 1000 ? n.toLocaleString(undefined,{maximumFractionDigits:1}) : n.toString();
+  }
+
+  loadScenariosFromStorage();
+  renderScenarioSelect();
+})();
+</script>
+</body>
+</html>

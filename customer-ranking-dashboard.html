@@ -552,7 +552,7 @@
   });
 
   // ---------- export ----------
-  $("exportBtn").addEventListener("click", () => {
+  $("exportBtn").addEventListener("click", async () => {
     if(!lastComputation) return;
     const {results, activeMetrics} = lastComputation;
     const header = ["Rank","Customer", ...activeMetrics.map(m=>m.name), "Score"];
@@ -563,10 +563,20 @@
         (r.score*100).toFixed(2)];
       lines.push(row.join(","));
     });
-    const blob = new Blob([lines.join("\n")], {type:"text/csv"});
+    const csvText = lines.join("\n");
+    const filename = "customer_ranking_" + (state.activeScenario || "results") + ".csv";
+
+    if(window.claude && window.claude.use){
+      try{
+        const downloads = await window.claude.use("downloads");
+        if(downloads){ await downloads.save({filename, data: csvText}); return; }
+      }catch(e){ /* declined, rate-limited, or unavailable — fall back below */ }
+    }
+
+    const blob = new Blob([csvText], {type:"text/csv"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "customer_ranking_" + (state.activeScenario || "results") + ".csv";
+    a.href = url; a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   });

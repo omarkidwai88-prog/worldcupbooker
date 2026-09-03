@@ -48,8 +48,8 @@
   header h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.01em;}
   header .sub{font-size:12.5px;color:var(--muted);margin-top:3px;font-weight:500;}
   .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-  .page{max-width:1320px;margin:0 auto;padding:20px 24px 60px;display:flex;flex-direction:column;gap:16px;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);}
+  .page{max-width:1440px;margin:0 auto;padding:20px 24px 60px;display:flex;flex-direction:column;gap:16px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
   .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
   .section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0;display:flex;align-items:center;gap:7px;}
   .section-title .step{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
@@ -70,40 +70,34 @@
   button.link{background:none;border:none;color:var(--accent);padding:0;font-size:12.5px;font-weight:700;}
   button:disabled{opacity:.4;cursor:not-allowed;}
 
-  /* ---- tabs ---- */
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);padding:0 2px;}
-  .tab-btn{background:none;border:none;border-radius:0;padding:10px 4px;margin-right:22px;font-size:13.5px;font-weight:700;
-    color:var(--muted);border-bottom:2px solid transparent;position:relative;top:1px;}
-  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
-  .tab-btn:hover:not(.active){color:var(--ink);}
-  .tab-panel{display:none;flex-direction:column;gap:16px;}
-  .tab-panel.active{display:flex;}
+  /* ---- top strip: data source (compact) + filters ---- */
+  .top-strip{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+  .data-source-compact{flex:0 0 300px;max-width:300px;}
+  .filters-card{flex:1;min-width:320px;}
+  @media (max-width:860px){ .data-source-compact{max-width:none;flex-basis:100%;} .filters-card{flex-basis:100%;} }
 
-  /* ---- setup card ---- */
   .dropzone{
-    border:2px dashed var(--border);border-radius:var(--radius);padding:20px 12px;text-align:center;
-    cursor:pointer;transition:.15s;font-size:13px;color:var(--muted);
+    border:2px dashed var(--border);border-radius:var(--radius);padding:16px 10px;text-align:center;
+    cursor:pointer;transition:.15s;font-size:12.5px;color:var(--muted);
   }
   .dropzone.drag{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
   .dropzone strong{color:var(--accent);}
   input[type=file]{display:none;}
-  .setup-grid{display:grid;grid-template-columns:1.1fr 2fr;gap:22px;}
-  @media (max-width:800px){.setup-grid{grid-template-columns:1fr;}}
-  .mapping-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(160px,1fr));gap:10px;}
+  .mapping-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(130px,1fr));gap:8px;margin-top:10px;}
   .mapping-grid .unmapped select{border-color:var(--bad);}
   .field-optional{font-weight:500;text-transform:none;letter-spacing:0;opacity:.7;}
   .hint{font-size:11.5px;color:var(--muted);line-height:1.55;}
   .sheet-picker{display:flex;gap:8px;align-items:center;margin-top:10px;}
-  .mapped-summary{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--good);font-weight:700;}
+  .mapped-summary{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--good);font-weight:700;}
   .mapped-summary svg{flex:none;}
 
-  /* ---- shared filters bar ---- */
-  .filters-row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;}
+  /* ---- filters ---- */
+  .filters-row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end;}
   .control-block{display:flex;flex-direction:column;gap:5px;}
 
   /* ---- segmented control ---- */
   .segmented{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
-  .segmented button{background:var(--surface-2);color:var(--muted);border-radius:0;padding:8px 14px;font-size:12.5px;font-weight:700;}
+  .segmented button{background:var(--surface-2);color:var(--muted);border-radius:0;padding:8px 13px;font-size:12.5px;font-weight:700;}
   .segmented button.active{background:var(--accent);color:var(--accent-ink);}
   .segmented button:disabled{opacity:.35;}
 
@@ -114,9 +108,23 @@
   .radio-opt.disabled{opacity:.4;cursor:not-allowed;}
   .radio-opt.disabled input{cursor:not-allowed;}
 
-  /* ---- weights ---- */
-  .weights-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(200px,1fr));gap:12px;margin-bottom:18px;}
-  .weight-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;background:var(--surface-2);}
+  /* ---- page layout: sidebar + main ---- */
+  .layout-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start;}
+  @media (max-width:900px){ .layout-grid{grid-template-columns:1fr;} }
+  .sidebar-controls{display:flex;flex-direction:column;gap:16px;}
+
+  /* ---- tabs ---- */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);padding:0 2px;}
+  .tab-btn{background:none;border:none;border-radius:0;padding:10px 4px;margin-right:22px;font-size:13.5px;font-weight:700;
+    color:var(--muted);border-bottom:2px solid transparent;position:relative;top:1px;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-btn:hover:not(.active){color:var(--ink);}
+  .tab-panel{display:none;flex-direction:column;gap:16px;}
+  .tab-panel.active{display:flex;}
+
+  /* ---- weights (stacked in sidebar) ---- */
+  .weights-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+  .weight-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;background:var(--surface-2);}
   .weight-card .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .weight-card .top strong{font-size:13px;}
   .weight-card .controls{display:flex;align-items:center;gap:10px;}
@@ -132,29 +140,31 @@
     width:15px;height:15px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);
     box-shadow:0 0 0 1px var(--accent);cursor:pointer;
   }
-  .weight-card .wnum{width:48px;text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  .weight-card .wnum{width:54px;text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;padding:7px 8px;}
   .weight-sum{font-size:11px;color:var(--muted);text-align:right;font-family:var(--font-mono);margin-bottom:16px;}
   .weight-sum.warn{color:var(--bad);}
 
   /* ---- thresholds ---- */
-  .thresholds-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
-  .thresholds-row .control-block input{width:70px;}
-  .tier-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:6px;}
+  .thresholds-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:4px;}
+  .thresholds-inputs{display:flex;align-items:center;gap:12px;}
+  .thresholds-inputs .control-block input{width:64px;}
+  .tier-bar{display:flex;height:9px;border-radius:5px;overflow:hidden;margin-top:6px;}
   .tier-bar span{display:block;height:100%;}
   .tier-bar .seg-top{background:var(--tier-top);}
   .tier-bar .seg-med{background:var(--tier-med);}
   .tier-bar .seg-low{background:var(--tier-low);}
 
   /* ---- scenarios ---- */
-  .scenario-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:16px;margin-top:16px;border-top:1px solid var(--border);}
-  .scenario-row input[type=text]{flex:1;min-width:180px;}
+  .scenario-block{display:flex;flex-direction:column;gap:8px;padding-top:16px;margin-top:16px;border-top:1px solid var(--border);}
+  .scenario-block input[type=text]{width:100%;}
   .scenario-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:99px;border:1px solid var(--border);
     background:var(--surface-2);font-size:12px;font-weight:700;cursor:pointer;}
   .scenario-chip.active{border-color:var(--accent);background:var(--accent-soft);}
   .scenario-chip button{background:none;border:none;color:var(--muted);padding:0;font-size:14px;font-weight:700;line-height:1;}
+  .scenario-list{display:flex;flex-direction:column;gap:6px;}
 
   /* ---- tier summary ---- */
-  .tier-summary{display:grid;grid-template-columns:repeat(auto-fit, minmax(230px,1fr));gap:14px;}
+  .tier-summary{display:grid;grid-template-columns:repeat(auto-fit, minmax(210px,1fr));gap:14px;}
   .tier-card{border-radius:var(--radius);padding:16px 18px;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);}
   .tier-card .tier-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .tier-card .tier-name{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:7px;}
@@ -169,7 +179,7 @@
 
   /* ---- results table ---- */
   .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-  .toolbar .search{max-width:240px;width:100%;}
+  .toolbar .search{max-width:220px;width:100%;}
   .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface);}
   thead th{position:sticky;top:0;background:var(--surface);z-index:2;}
@@ -190,12 +200,10 @@
   .pager{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px;font-size:12.5px;color:var(--muted);}
   .pager button{padding:5px 10px;}
 
-  /* ---- variance tab ---- */
-  .variance-note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px;}
-  .cv-cell{font-weight:700;}
-  .cv-low{color:var(--good);}
-  .cv-mid{color:var(--tier-top);}
-  .cv-high{color:var(--bad);}
+  /* ---- breakdown table group headers ---- */
+  .grp-top{color:var(--tier-top);} .grp-med{color:var(--tier-med);} .grp-low{color:var(--tier-low);}
+  th.grp-divider{border-left:2px solid var(--border);}
+  td.grp-divider{border-left:2px solid var(--border);}
 
   .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 20px;color:var(--muted);text-align:center;gap:8px;}
   .empty-state svg{opacity:.5;margin-bottom:8px;color:var(--accent);}
@@ -219,168 +227,161 @@
 
 <div class="page">
 
-  <section class="card" id="setupCard">
-    <div class="card-head">
-      <p class="section-title"><span class="step">1</span> Data source</p>
-      <div id="mappedSummary" style="display:none;">
+  <div class="top-strip">
+    <section class="card data-source-compact" id="setupCard">
+      <div class="card-head" style="margin-bottom:10px;">
+        <p class="section-title"><span class="step">1</span> Data source</p>
+      </div>
+      <div id="mappedSummary" style="display:none;margin-bottom:8px;">
         <span class="mapped-summary">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-          Columns mapped
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          Mapped
         </span>
-        <button class="link" id="editMappingBtn" style="margin-left:10px;">Edit mapping</button>
+        <button class="link" id="editMappingBtn" style="margin-left:8px;">Edit</button>
       </div>
-    </div>
-    <div class="setup-grid" id="setupGrid">
-      <div>
-        <div class="dropzone" id="dropzone">
-          <div><strong>Click to upload</strong> or drag a file here</div>
-          <div style="margin-top:4px;">.xlsx, .xls, .csv &middot; monthly customer activity</div>
-        </div>
-        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
-        <div class="sheet-picker" id="sheetPicker" style="display:none;">
-          <label class="field" style="margin:0;flex:0 0 auto;">Sheet:</label>
-          <select id="sheetSelect"></select>
-        </div>
-        <div id="fileStatus" class="hint" style="margin-top:10px;"></div>
+      <div class="dropzone" id="dropzone">
+        <div><strong>Click to upload</strong> or drag a file</div>
+        <div style="margin-top:3px;">.xlsx, .xls, .csv</div>
       </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+      <div class="sheet-picker" id="sheetPicker" style="display:none;">
+        <label class="field" style="margin:0;flex:0 0 auto;">Sheet:</label>
+        <select id="sheetSelect"></select>
+      </div>
+      <div id="fileStatus" class="hint" style="margin-top:8px;"></div>
       <div id="mappingWrap">
-        <p class="hint" style="margin:0 0 10px;">Drops, Ship Qty, Cases and Sales are auto-detected when named like the source system. Site and Region are optional &mdash; map them to unlock site/region-level ranking and the Variance tab.</p>
+        <p class="hint" style="margin:8px 0;">Drops, Ship Qty, Cases, Sales auto-detect. Site/Region are optional — map them to unlock site/region ranking.</p>
         <div class="mapping-grid" id="mappingGrid"></div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="card" id="filtersCard" style="display:none;">
-    <p class="section-title" style="margin-bottom:14px;"><span class="step">2</span> Filters</p>
-    <div class="filters-row">
-      <div class="control-block">
-        <label class="field">Period</label>
-        <div class="segmented" id="periodToggle">
-          <button data-mode="lifetime" class="active">Monthly Average</button>
-          <button data-mode="window6">6-Month Total</button>
+    <section class="card filters-card" id="filtersCard" style="display:none;">
+      <p class="section-title" style="margin-bottom:14px;"><span class="step">2</span> Filters</p>
+      <div class="filters-row">
+        <div class="control-block">
+          <label class="field">Period</label>
+          <div class="segmented" id="periodToggle">
+            <button data-mode="lifetime" class="active">Monthly Average</button>
+            <button data-mode="window6">6-Month Total</button>
+          </div>
+        </div>
+        <div class="control-block">
+          <label class="field">Account type</label>
+          <select id="acctTypeFilter" style="min-width:170px;"></select>
+        </div>
+        <div class="control-block" id="siteFilterBlock" style="display:none;">
+          <label class="field">Site</label>
+          <select id="siteFilter" style="min-width:170px;"></select>
+        </div>
+        <div class="control-block" style="flex:1;min-width:220px;">
+          <label class="field">&nbsp;</label>
+          <div class="hint" id="periodExplain"></div>
         </div>
       </div>
-      <div class="control-block">
-        <label class="field">Account type</label>
-        <select id="acctTypeFilter" style="min-width:180px;"></select>
-      </div>
-      <div class="control-block" style="flex:1;min-width:240px;">
-        <label class="field">&nbsp;</label>
-        <div class="hint" id="periodExplain"></div>
-      </div>
-    </div>
-  </section>
+    </section>
+  </div>
 
   <div class="tabs" id="tabs" style="display:none;">
     <button class="tab-btn active" data-tab="ranking">Ranking</button>
-    <button class="tab-btn" data-tab="variance">Variance</button>
+    <button class="tab-btn" data-tab="breakdown">Site Breakdown</button>
   </div>
 
-  <!-- ============ RANKING TAB ============ -->
-  <div class="tab-panel active" id="tab-ranking">
+  <div class="layout-grid" id="layoutGrid" style="display:none;">
+    <aside class="sidebar-controls">
+      <section class="card" id="controlsCard">
+        <p class="section-title" style="margin-bottom:14px;"><span class="step">3</span> Scenario controls</p>
 
-    <section class="card" id="controlsCard" style="display:none;">
-      <p class="section-title" style="margin-bottom:14px;"><span class="step">3</span> Scenario controls</p>
+        <label class="field">Compare within</label>
+        <div class="segmented" id="rankLevelToggle" style="margin-bottom:6px;">
+          <button data-level="global" class="active">All Customers</button>
+          <button data-level="site">Site</button>
+          <button data-level="region">Region</button>
+        </div>
+        <div class="hint" id="rankLevelExplain" style="margin-bottom:16px;"></div>
 
-      <div class="filters-row" style="margin-bottom:18px;">
-        <div class="control-block">
-          <label class="field">Rank at</label>
-          <div class="segmented" id="rankLevelToggle">
-            <button data-level="customer" class="active">Customer</button>
-            <button data-level="site">Site</button>
-            <button data-level="region">Region</button>
+        <label class="field" style="margin-bottom:8px;">Metric weights</label>
+        <div class="weights-stack" id="weightsGrid"></div>
+        <div class="weight-sum" id="weightSum"></div>
+
+        <label class="field" style="margin-bottom:8px;">Tier thresholds (percentile within cohort)</label>
+        <div class="thresholds-stack">
+          <div class="thresholds-inputs">
+            <div class="control-block">
+              <label class="field">Top &le;</label>
+              <input type="number" id="topPctInput" min="1" max="98" value="20">%
+            </div>
+            <div class="control-block">
+              <label class="field">Medium &le;</label>
+              <input type="number" id="medPctInput" min="2" max="99" value="50">%
+            </div>
           </div>
+          <div>
+            <label class="field" id="tierLabelsRow">Top 1&ndash;20% &middot; Medium 21&ndash;50% &middot; Low 51&ndash;100%</label>
+            <div class="tier-bar"><span class="seg-top" id="segTop"></span><span class="seg-med" id="segMed"></span><span class="seg-low" id="segLow"></span></div>
+          </div>
+          <button class="secondary" id="equalizeBtn">Equalize weights</button>
         </div>
-        <div class="control-block" style="flex:1;min-width:240px;">
-          <label class="field">&nbsp;</label>
-          <div class="hint" id="rankLevelExplain"></div>
+        <div class="warn-text" id="thresholdWarn" style="display:none;"></div>
+
+        <div class="scenario-block">
+          <input type="text" id="scenarioNameInput" placeholder="Scenario name...">
+          <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
+            <button id="saveScenarioBtn">Save scenario</button>
+            <span class="hint" id="scenarioCountLabel"></span>
+          </div>
+          <div class="scenario-list" id="scenarioChips"></div>
+          <div class="warn-text" id="scenarioWarn" style="display:none;"></div>
         </div>
+      </section>
+    </aside>
+
+    <main style="display:flex;flex-direction:column;gap:16px;min-width:0;">
+      <!-- ============ RANKING TAB ============ -->
+      <div class="tab-panel active" id="tab-ranking">
+        <section class="tier-summary" id="tierSummary"></section>
+
+        <section class="card" id="resultsCard">
+          <div class="toolbar">
+            <div><span id="rowCount" class="hint"></span></div>
+            <div class="toolbar-actions">
+              <input type="text" id="searchBox" class="search" placeholder="Filter...">
+              <button class="secondary" id="exportCurrentBtn">Export current view</button>
+              <button class="secondary" id="exportScenariosBtn" disabled title="Save at least one scenario first">Export scenario comparison</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="resultsTable">
+              <thead><tr id="tableHead"></tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="pager"></div>
+        </section>
       </div>
 
-      <label class="field" style="margin-bottom:8px;">Metric weights</label>
-      <div class="weights-grid" id="weightsGrid"></div>
-      <div class="weight-sum" id="weightSum"></div>
+      <!-- ============ SITE BREAKDOWN TAB ============ -->
+      <div class="tab-panel" id="tab-breakdown">
+        <section class="card">
+          <p class="section-title" style="margin-bottom:14px;">Group by</p>
+          <div class="radio-group" id="breakdownGroupBy">
+            <label class="radio-opt" data-level="site"><input type="radio" name="brkGroup" value="site"> Site</label>
+            <label class="radio-opt" data-level="region"><input type="radio" name="brkGroup" value="region"> Region</label>
+          </div>
+          <div class="hint" id="breakdownUnavailable" style="display:none;margin-top:10px;">Map a Site or Region column in Data Source to use this tab.</div>
+        </section>
 
-      <label class="field" style="margin-bottom:8px;">Tier thresholds (by percentile of ranked entities)</label>
-      <div class="thresholds-row">
-        <div class="control-block">
-          <label class="field">Top tier &le;</label>
-          <input type="number" id="topPctInput" min="1" max="98" value="20"> %
-        </div>
-        <div class="control-block">
-          <label class="field">Medium tier &le;</label>
-          <input type="number" id="medPctInput" min="2" max="99" value="50"> %
-        </div>
-        <div class="control-block" style="flex:1;min-width:220px;">
-          <label class="field" id="tierLabelsRow">Top 1&ndash;20% &middot; Medium 21&ndash;50% &middot; Low 51&ndash;100%</label>
-          <div class="tier-bar"><span class="seg-top" id="segTop"></span><span class="seg-med" id="segMed"></span><span class="seg-low" id="segLow"></span></div>
-        </div>
-        <button class="secondary" id="equalizeBtn">Equalize weights</button>
+        <section class="card" id="breakdownCard" style="display:none;">
+          <div class="card-head">
+            <div>
+              <p class="section-title">Tier breakdown by group</p>
+              <div class="hint">Each group's customers are ranked only against each other, then rolled up into Top / Medium / Low averages — the same math as the tier cards, one row per group.</div>
+            </div>
+            <button class="secondary" id="exportBreakdownBtn">Export (CSV)</button>
+          </div>
+          <div class="table-wrap"><table id="breakdownTable"><thead><tr id="breakdownHead"></tr></thead><tbody id="breakdownBody"></tbody></table></div>
+        </section>
       </div>
-      <div class="warn-text" id="thresholdWarn" style="display:none;"></div>
-
-      <div class="scenario-row">
-        <input type="text" id="scenarioNameInput" placeholder="Save current weights/thresholds as a scenario...">
-        <button id="saveScenarioBtn">Save scenario</button>
-        <span class="hint" id="scenarioCountLabel"></span>
-        <div id="scenarioChips" style="display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:4px;"></div>
-        <div class="warn-text" id="scenarioWarn" style="display:none;width:100%;"></div>
-      </div>
-    </section>
-
-    <section class="tier-summary" id="tierSummary" style="display:none;"></section>
-
-    <section class="card" id="resultsCard" style="display:none;">
-      <div class="toolbar">
-        <div><span id="rowCount" class="hint"></span></div>
-        <div class="toolbar-actions">
-          <input type="text" id="searchBox" class="search" placeholder="Filter...">
-          <button class="secondary" id="exportCurrentBtn">Export current view</button>
-          <button class="secondary" id="exportScenariosBtn" disabled title="Save at least one scenario first">Export scenario comparison</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table id="resultsTable">
-          <thead><tr id="tableHead"></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-      <div class="pager" id="pager"></div>
-    </section>
-  </div>
-
-  <!-- ============ VARIANCE TAB ============ -->
-  <div class="tab-panel" id="tab-variance">
-    <section class="card">
-      <p class="section-title" style="margin-bottom:14px;">Group by</p>
-      <div class="radio-group" id="varianceGroupBy">
-        <label class="radio-opt" data-level="site"><input type="radio" name="varGroup" value="site"> Site</label>
-        <label class="radio-opt" data-level="region"><input type="radio" name="varGroup" value="region"> Region</label>
-      </div>
-      <div class="hint" id="varianceUnavailable" style="display:none;margin-top:10px;">Map a Site or Region column in Data Source to use the Variance tab.</div>
-    </section>
-
-    <section class="card" id="concentrationCard" style="display:none;">
-      <div class="card-head">
-        <div>
-          <p class="section-title">Spread across customers</p>
-          <div class="variance-note">Coefficient of variation (std. dev. &divide; mean) of each metric across the customers within each group. Higher = business is concentrated in a few accounts; lower = evenly spread.</div>
-        </div>
-        <button class="secondary" id="exportConcentrationBtn">Export (CSV)</button>
-      </div>
-      <div class="table-wrap"><table id="concentrationTable"><thead><tr id="concentrationHead"></tr></thead><tbody id="concentrationBody"></tbody></table></div>
-    </section>
-
-    <section class="card" id="volatilityCard" style="display:none;">
-      <div class="card-head">
-        <div>
-          <p class="section-title">Month-to-month volatility</p>
-          <div class="variance-note">Coefficient of variation of each group's total metrics across the months it was active. Higher = totals swing month to month; lower = steady volume.</div>
-        </div>
-        <button class="secondary" id="exportVolatilityBtn">Export (CSV)</button>
-      </div>
-      <div class="table-wrap"><table id="volatilityTable"><thead><tr id="volatilityHead"></tr></thead><tbody id="volatilityBody"></tbody></table></div>
-    </section>
+    </main>
   </div>
 
   <div id="emptyState" class="empty-state">
@@ -401,7 +402,7 @@
     {key:"caseEq",  label:"Cases"},
     {key:"sls",     label:"Sales"}
   ];
-  const LEVEL_LABELS = {customer:"Customer", site:"Site", region:"Region"};
+  const LEVEL_LABELS = {global:"Customer", site:"Site", region:"Region"};
   const FIELD_ALIASES = {
     custId:   ["sitecustid","custid","customerid","acctid","accountid","customernumber","custnum"],
     custName: ["custnm","customername","custname"],
@@ -430,21 +431,21 @@
     acctTypeOptions: [],
     hasSite: false, hasRegion: false,
     mode: "lifetime",              // 'lifetime' | 'window6'
-    rankLevel: "customer",         // 'customer' | 'site' | 'region'
-    varianceGroupBy: "site",       // 'site' | 'region'
+    cohortLevel: "global",         // 'global' | 'site' | 'region' -- ranking comparison scope
+    breakdownGroupBy: "site",      // 'site' | 'region' -- Site Breakdown tab's own grouping
     activeTab: "ranking",
     weights: {drops:25, shipQty:25, caseEq:25, sls:25},
     topPct: 20, medPct: 50,
-    acctTypeFilter: "",
-    scenarios: {},                 // ordered by insertion: name -> {weights, topPct, medPct, mode}
-    currentAggregates: null,
+    acctTypeFilter: "", siteFilter: "",
+    scenarios: {},
+    customerAggregates: null,
     filteredRows: [],
     sortKey: "rank", sortDir: 1,
     searchTerm: "", page: 0
   };
 
   const $ = (id) => document.getElementById(id);
-  const SCENARIO_KEY = "ctd_scenarios_v2";
+  const SCENARIO_KEY = "ctd_scenarios_v3";
 
   function loadScenarios(){
     try{ state.scenarios = JSON.parse(localStorage.getItem(SCENARIO_KEY) || "{}"); }catch(e){ state.scenarios = {}; }
@@ -458,7 +459,7 @@
     state.activeTab = btn.dataset.tab;
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b===btn));
     $("tab-ranking").classList.toggle("active", state.activeTab==="ranking");
-    $("tab-variance").classList.toggle("active", state.activeTab==="variance");
+    $("tab-breakdown").classList.toggle("active", state.activeTab==="breakdown");
   }));
 
   // ---------- file handling ----------
@@ -508,11 +509,10 @@
     state.rawRows = rows;
     autoDetectMapping();
     renderMappingGrid();
-    $("fileStatus").textContent = "Computing aggregates for " + rows.length.toLocaleString() + " rows...";
+    $("fileStatus").textContent = "Computing " + rows.length.toLocaleString() + " rows...";
     setTimeout(() => {
       tryApplyMapping();
-      $("fileStatus").textContent = (displayName ? "Loaded " + displayName + " — " : "Loaded ") +
-        rows.length.toLocaleString() + " rows.";
+      $("fileStatus").textContent = (displayName ? displayName + " — " : "") + rows.length.toLocaleString() + " rows loaded.";
     }, 10);
   }
 
@@ -549,7 +549,7 @@
     });
     state.headers = headers;
     state.rawRows = rows;
-    $("fileStatus").textContent = "Loaded sample dataset (" + names.length + " customers, 4 sites, 6 fiscal months).";
+    $("fileStatus").textContent = "Sample dataset — " + names.length + " customers, 4 sites, 6 fiscal months.";
     $("sheetPicker").style.display = "none";
     autoDetectMapping();
     renderMappingGrid();
@@ -581,7 +581,7 @@
       const isUnmapped = REQUIRED_FIELDS.includes(field) && !state.mapping[field];
       const isOptional = OPTIONAL_FIELDS.includes(field);
       return `<div class="${isUnmapped?"unmapped":""}">
-        <label class="field">${FIELD_LABELS[field]}${isOptional?` <span class="field-optional">(optional)</span>`:" *"}</label>
+        <label class="field">${FIELD_LABELS[field]}${isOptional?` <span class="field-optional">(opt)</span>`:" *"}</label>
         <select data-field="${field}">${options}</select>
       </div>`;
     }).join("");
@@ -599,9 +599,7 @@
       $("mappingWrap").style.display = "block";
       $("filtersCard").style.display = "none";
       $("tabs").style.display = "none";
-      $("controlsCard").style.display = "none";
-      $("tierSummary").style.display = "none";
-      $("resultsCard").style.display = "none";
+      $("layoutGrid").style.display = "none";
       $("emptyState").style.display = "flex";
       return;
     }
@@ -613,15 +611,14 @@
     $("emptyState").style.display = "none";
     $("filtersCard").style.display = "block";
     $("tabs").style.display = "flex";
-    $("controlsCard").style.display = "block";
-    $("resultsCard").style.display = "block";
+    $("layoutGrid").style.display = "grid";
     populateAcctTypeFilter();
+    populateSiteFilter();
     setupRankLevelToggle();
-    setupVarianceGroupBy();
+    setupBreakdownGroupBy();
     renderWeights();
     renderScenarioChips();
     recompute();
-    refreshVariance();
   }
 
   $("editMappingBtn").addEventListener("click", () => {
@@ -687,48 +684,60 @@
     const sel = $("acctTypeFilter");
     sel.innerHTML = `<option value="">All account types</option>` + types.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
     sel.value = state.acctTypeFilter;
-    sel.onchange = () => { state.acctTypeFilter = sel.value; recompute(); refreshVariance(); };
+    sel.onchange = () => { state.acctTypeFilter = sel.value; recompute(); };
+  }
+
+  function populateSiteFilter(){
+    const block = $("siteFilterBlock");
+    if(!state.hasSite){ block.style.display = "none"; state.siteFilter = ""; return; }
+    block.style.display = "flex";
+    const sites = Array.from(new Set(state.parsedRows.map(r => r.site || "Unassigned"))).sort();
+    const sel = $("siteFilter");
+    sel.innerHTML = `<option value="">All sites</option>` + sites.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    sel.value = state.siteFilter;
+    sel.onchange = () => { state.siteFilter = sel.value; recompute(); };
   }
 
   function setupRankLevelToggle(){
     const wrap = $("rankLevelToggle");
     wrap.querySelectorAll("button").forEach(btn => {
       const level = btn.dataset.level;
-      const available = level==="customer" || (level==="site" && state.hasSite) || (level==="region" && state.hasRegion);
+      const available = level==="global" || (level==="site" && state.hasSite) || (level==="region" && state.hasRegion);
       btn.disabled = !available;
-      btn.classList.toggle("active", state.rankLevel===level);
+      btn.classList.toggle("active", state.cohortLevel===level);
     });
     wrap.querySelectorAll("button").forEach(btn => btn.onclick = () => {
       if(btn.disabled) return;
-      state.rankLevel = btn.dataset.level;
+      state.cohortLevel = btn.dataset.level;
       wrap.querySelectorAll("button").forEach(b => b.classList.toggle("active", b===btn));
+      state.sortKey = state.cohortLevel === "global" ? "rank" : "cohort";
+      state.sortDir = 1;
       updateRankLevelExplain();
-      recompute();
+      rescore();
     });
     updateRankLevelExplain();
   }
   function updateRankLevelExplain(){
-    const noun = LEVEL_LABELS[state.rankLevel];
-    $("rankLevelExplain").textContent = state.rankLevel === "customer"
-      ? "Each row is one customer."
-      : `Each row is one ${noun.toLowerCase()} — all its customers' activity is pooled before ranking.`;
+    $("rankLevelExplain").textContent = state.cohortLevel === "global"
+      ? "Every customer ranked against the full customer base."
+      : `Each customer ranked only against other customers at their own ${state.cohortLevel} — tiers reflect that ${state.cohortLevel}'s own distribution.`;
   }
 
-  function setupVarianceGroupBy(){
-    const wrap = $("varianceGroupBy");
+  function setupBreakdownGroupBy(){
+    const wrap = $("breakdownGroupBy");
     const anyAvailable = state.hasSite || state.hasRegion;
-    $("varianceUnavailable").style.display = anyAvailable ? "none" : "block";
+    $("breakdownUnavailable").style.display = anyAvailable ? "none" : "block";
     wrap.style.display = anyAvailable ? "flex" : "none";
-    if(!state.hasSite && state.varianceGroupBy==="site" && state.hasRegion) state.varianceGroupBy = "region";
-    if(!state.hasRegion && state.varianceGroupBy==="region" && state.hasSite) state.varianceGroupBy = "site";
+    if(!state.hasSite && state.breakdownGroupBy==="site" && state.hasRegion) state.breakdownGroupBy = "region";
+    if(!state.hasRegion && state.breakdownGroupBy==="region" && state.hasSite) state.breakdownGroupBy = "site";
     wrap.querySelectorAll(".radio-opt").forEach(opt => {
       const level = opt.dataset.level;
       const available = (level==="site" && state.hasSite) || (level==="region" && state.hasRegion);
       opt.classList.toggle("disabled", !available);
       const input = opt.querySelector("input");
       input.disabled = !available;
-      input.checked = state.varianceGroupBy === level;
-      input.onchange = () => { if(!input.disabled){ state.varianceGroupBy = level; refreshVariance(); } };
+      input.checked = state.breakdownGroupBy === level;
+      input.onchange = () => { if(!input.disabled){ state.breakdownGroupBy = level; renderBreakdown(); } };
     });
   }
 
@@ -737,7 +746,6 @@
     state.mode = btn.dataset.mode;
     $("periodToggle").querySelectorAll("button").forEach(b => b.classList.toggle("active", b===btn));
     recompute();
-    refreshVariance();
   }));
   function updatePeriodExplain(){
     $("periodExplain").textContent = state.mode === "lifetime"
@@ -800,74 +808,49 @@
   $("topPctInput").addEventListener("input", () => { readThresholds(); rescore(); });
   $("medPctInput").addEventListener("input", () => { readThresholds(); rescore(); });
 
-  // ---------- core aggregation ----------
-  // Groups already-filtered rows into per-entity period aggregates at the given
-  // level ('customer' | 'site' | 'region') and mode ('lifetime' | 'window6').
-  function aggregateEntities(rows, level, mode){
-    const allMonths = Array.from(new Set(rows.map(r => r.monthKey))).sort((a,b)=> a<b?-1:a>b?1:0);
-    const windowMonths = new Set(allMonths.slice(-6));
-
-    const keyOf = level === "site" ? (r => r.site || "Unassigned")
-                : level === "region" ? (r => r.region || "Unassigned")
-                : (r => r.custId);
-
-    const groups = new Map();
-    rows.forEach(r => {
-      const k = keyOf(r);
-      if(!groups.has(k)) groups.set(k, []);
-      groups.get(k).push(r);
-    });
-
-    const aggregates = [];
-    groups.forEach((groupRows, key) => {
-      const relevant = mode === "window6" ? groupRows.filter(r => windowMonths.has(r.monthKey)) : groupRows;
-      const activeMonths = new Set(relevant.map(r => r.monthKey));
-      if(activeMonths.size === 0) return;
-      const n = activeMonths.size;
-      const sums = {drops:0, shipQty:0, caseEq:0, sls:0};
-      const custIds = new Set();
-      relevant.forEach(r => {
-        sums.drops+=r.drops; sums.shipQty+=r.shipQty; sums.caseEq+=r.caseEq; sums.sls+=r.sls;
-        custIds.add(r.custId);
-      });
-      const latest = groupRows.reduce((a,b) => b.monthKey > a.monthKey ? b : a);
-      const label = level === "customer" ? latest.custName : key;
-      aggregates.push({
-        id: key, label, acctType: latest.acctType, site: latest.site, region: latest.region,
-        custCount: custIds.size, activeMonths: n,
-        drops: sums.drops/n, shipQty: sums.shipQty/n, caseEq: sums.caseEq/n, sls: sums.sls/n
-      });
-    });
-    return aggregates;
-  }
-
-  function getFilteredRows(){
+  // ---------- core aggregation (customer level, always) ----------
+  // Account type is a row/month-level attribute, so it filters BEFORE aggregation.
+  // Site is used as a customer-level cohort key (each customer's most-recent site
+  // label — see aggregateCustomers), so it filters AFTER aggregation, against that
+  // same label. Filtering rows by site directly would silently diverge from the
+  // Site cohort grouping for any customer whose site tag changed month to month.
+  function getAcctFilteredRows(){
     let rows = state.parsedRows;
     if(state.acctTypeFilter) rows = rows.filter(r => r.acctType === state.acctTypeFilter);
     return rows;
   }
+  function applySiteFilter(aggregates){
+    if(!state.siteFilter) return aggregates;
+    return aggregates.filter(c => (c.site || "Unassigned") === state.siteFilter);
+  }
 
-  // Expensive pass — only call when data, account-type filter, rank level, or mode changes.
+  function aggregateCustomers(rows, mode){
+    const allMonths = Array.from(new Set(rows.map(r => r.monthKey))).sort((a,b)=> a<b?-1:a>b?1:0);
+    const windowMonths = new Set(allMonths.slice(-6));
+    const groups = new Map();
+    rows.forEach(r => { if(!groups.has(r.custId)) groups.set(r.custId, []); groups.get(r.custId).push(r); });
+    const out = [];
+    groups.forEach((custRows, custId) => {
+      const relevant = mode === "window6" ? custRows.filter(r => windowMonths.has(r.monthKey)) : custRows;
+      const activeMonths = new Set(relevant.map(r => r.monthKey));
+      if(activeMonths.size === 0) return;
+      const n = activeMonths.size;
+      const sums = {drops:0, shipQty:0, caseEq:0, sls:0};
+      relevant.forEach(r => { sums.drops+=r.drops; sums.shipQty+=r.shipQty; sums.caseEq+=r.caseEq; sums.sls+=r.sls; });
+      const latest = custRows.reduce((a,b) => b.monthKey > a.monthKey ? b : a);
+      out.push({
+        id: custId, label: latest.custName, acctType: latest.acctType,
+        site: latest.site || "", region: latest.region || "", activeMonths: n,
+        drops: sums.drops/n, shipQty: sums.shipQty/n, caseEq: sums.caseEq/n, sls: sums.sls/n
+      });
+    });
+    return out;
+  }
+
+  // Expensive pass — only call when data, account-type filter, site filter, or mode changes.
   function aggregateData(){
-    state.filteredRows = getFilteredRows();
-    state.currentAggregates = aggregateEntities(state.filteredRows, state.rankLevel, state.mode);
-  }
-
-  // Cheap pass — normalizes/weights/ranks already-aggregated rows. Safe on every weight/threshold tweak.
-  function rescore(){
-    if(!state.currentAggregates) return;
-    updatePeriodExplain();
-    readThresholds();
-    state.page = 0;
-    lastComputation = computeTiers(state.currentAggregates, state.weights, state.topPct, state.medPct);
-    renderTierSummary(lastComputation);
-    renderTable(lastComputation);
-  }
-
-  function recompute(){
-    if(!state.parsedRows.length) return;
-    aggregateData();
-    rescore();
+    state.filteredRows = getAcctFilteredRows();
+    state.customerAggregates = applySiteFilter(aggregateCustomers(state.filteredRows, state.mode));
   }
 
   function computeTiers(aggregates, weights, topPct, medPct){
@@ -905,34 +888,90 @@
     return {rows: scored, activeMetrics, total};
   }
 
+  // Groups customer aggregates into cohorts (by site/region/global) and ranks
+  // customers independently WITHIN each cohort. Cheap — safe on weight/threshold ticks.
+  function cohortKeyFn(level){
+    if(level === "site") return c => c.site || "Unassigned";
+    if(level === "region") return c => c.region || "Unassigned";
+    return () => "__all__";
+  }
+  function rankByCohort(customerAggregates, cohortLevel, weights, topPct, medPct){
+    const keyOf = cohortKeyFn(cohortLevel);
+    const cohorts = new Map();
+    customerAggregates.forEach(c => {
+      const k = keyOf(c);
+      if(!cohorts.has(k)) cohorts.set(k, []);
+      cohorts.get(k).push(c);
+    });
+    const keys = Array.from(cohorts.keys()).sort();
+    let flat = [], activeMetrics = null;
+    const perCohort = [];
+    keys.forEach(key => {
+      const custs = cohorts.get(key);
+      const tiered = computeTiers(custs, weights, topPct, medPct);
+      activeMetrics = tiered.activeMetrics;
+      tiered.rows.forEach(r => { r.cohort = cohortLevel === "global" ? null : key; r.cohortSize = custs.length; });
+      perCohort.push({key, rows: tiered.rows, size: custs.length});
+      flat = flat.concat(tiered.rows);
+    });
+    return {rows: flat, activeMetrics, total: customerAggregates.length, perCohort, cohortLevel};
+  }
+
+  function computeTierStats(rows){
+    const out = {};
+    ["top","med","low"].forEach(t => {
+      const sub = rows.filter(r => r.tier === t);
+      const count = sub.length;
+      const sumCases = sub.reduce((s,r)=>s+r.caseEq,0);
+      const sumSales = sub.reduce((s,r)=>s+r.sls,0);
+      const sumDrops = sub.reduce((s,r)=>s+r.drops,0);
+      out[t] = {
+        count,
+        avgCases: count ? sumCases/count : 0,
+        avgSales: count ? sumSales/count : 0,
+        casesPerDrop: sumDrops > 0 ? sumCases/sumDrops : 0,
+        salesPerDrop: sumDrops > 0 ? sumSales/sumDrops : 0
+      };
+    });
+    return out;
+  }
+
   let lastComputation = null;
 
-  // ---------- tier summary ----------
+  function rescore(){
+    if(!state.customerAggregates) return;
+    updatePeriodExplain();
+    readThresholds();
+    state.page = 0;
+    lastComputation = rankByCohort(state.customerAggregates, state.cohortLevel, state.weights, state.topPct, state.medPct);
+    renderTierSummary(lastComputation);
+    renderTable(lastComputation);
+    renderBreakdown();
+  }
+
+  function recompute(){
+    if(!state.parsedRows.length) return;
+    aggregateData();
+    rescore();
+  }
+
+  // ---------- tier summary (pooled across cohorts) ----------
   function renderTierSummary(comp){
     const tiers = [{key:"top", label:"Top"}, {key:"med", label:"Medium"}, {key:"low", label:"Low"}];
-    const noun = LEVEL_LABELS[state.rankLevel].toLowerCase();
+    const stats = computeTierStats(comp.rows);
     const wrap = $("tierSummary");
-    wrap.style.display = "grid";
     wrap.innerHTML = tiers.map(t => {
-      const rows = comp.rows.filter(r => r.tier === t.key);
-      const count = rows.length;
-      const sumCases = rows.reduce((s,r)=>s+r.caseEq,0);
-      const sumSales = rows.reduce((s,r)=>s+r.sls,0);
-      const sumDrops = rows.reduce((s,r)=>s+r.drops,0);
-      const avgCases = count ? sumCases/count : 0;
-      const avgSales = count ? sumSales/count : 0;
-      const casesPerDrop = sumDrops > 0 ? sumCases/sumDrops : 0;
-      const salesPerDrop = sumDrops > 0 ? sumSales/sumDrops : 0;
+      const s = stats[t.key];
       return `<div class="tier-card ${t.key}">
         <div class="tier-head">
           <span class="tier-name"><span class="tier-dot"></span>${t.label}</span>
-          <span class="count">${count} ${noun}${count===1?"":"s"}</span>
+          <span class="count">${s.count} customer${s.count===1?"":"s"}</span>
         </div>
         <div class="tier-metrics">
-          <div class="tier-metric"><label>Avg Cases</label><div class="val">${formatNum(avgCases)}</div></div>
-          <div class="tier-metric"><label>Avg Sales</label><div class="val">${formatCurrency(avgSales)}</div></div>
-          <div class="tier-metric"><label>Cases / Drop</label><div class="val">${formatNum(casesPerDrop)}</div></div>
-          <div class="tier-metric"><label>Sales / Drop</label><div class="val">${formatCurrency(salesPerDrop)}</div></div>
+          <div class="tier-metric"><label>Avg Cases</label><div class="val">${formatNum(s.avgCases)}</div></div>
+          <div class="tier-metric"><label>Avg Sales</label><div class="val">${formatCurrency(s.avgSales)}</div></div>
+          <div class="tier-metric"><label>Cases / Drop</label><div class="val">${formatNum(s.casesPerDrop)}</div></div>
+          <div class="tier-metric"><label>Sales / Drop</label><div class="val">${formatCurrency(s.salesPerDrop)}</div></div>
         </div>
       </div>`;
     }).join("");
@@ -942,14 +981,11 @@
   const PAGE_SIZE = 100;
 
   function renderTable(comp){
-    const level = state.rankLevel;
-    const entityLabel = LEVEL_LABELS[level];
+    const level = state.cohortLevel;
     const head = $("tableHead");
-    let cols = [
-      {key:"rank", label:"Rank"}, {key:"tier", label:"Tier"}, {key:"label", label:entityLabel}
-    ];
-    if(level === "customer") cols.push({key:"acctType", label:"Account Type"});
-    else cols.push({key:"custCount", label:"Customers"});
+    let cols = [{key:"rank", label:"Rank"}, {key:"tier", label:"Tier"}, {key:"label", label:"Customer"}];
+    if(level !== "global") cols.push({key:"cohort", label: LEVEL_LABELS[level]});
+    cols.push({key:"acctType", label:"Account Type"});
     METRICS.forEach(m => cols.push({key:m.key, label:m.label}));
     cols.push({key:"score", label:"Score"});
 
@@ -965,9 +1001,14 @@
     let rows = comp.rows;
     if(state.searchTerm){
       const t = state.searchTerm.toLowerCase();
-      rows = rows.filter(r => r.label.toLowerCase().includes(t) || (r.id && String(r.id).toLowerCase().includes(t)));
+      rows = rows.filter(r => r.label.toLowerCase().includes(t) || String(r.id).toLowerCase().includes(t));
     }
     rows = rows.slice().sort((a,b) => {
+      if(state.sortKey === "cohort"){
+        const ac = a.cohort || "", bc = b.cohort || "";
+        if(ac !== bc) return ac < bc ? -1*state.sortDir : 1*state.sortDir;
+        return a.rank - b.rank;
+      }
       let av = a[state.sortKey], bv = b[state.sortKey];
       if(typeof av === "string") av = av.toLowerCase();
       if(typeof bv === "string") bv = bv.toLowerCase();
@@ -986,7 +1027,8 @@
       <td><span class="rank-badge">#${r.rank}</span></td>
       <td><span class="tier-pill ${r.tier}">${r.tier==="top"?"Top":r.tier==="med"?"Medium":"Low"}</span></td>
       <td class="cust-name">${escapeHtml(r.label)}</td>
-      <td>${level==="customer" ? escapeHtml(r.acctType || "—") : formatNum(r.custCount)}</td>
+      ${level !== "global" ? `<td>${escapeHtml(r.cohort)}</td>` : ""}
+      <td>${escapeHtml(r.acctType || "—")}</td>
       <td>${formatNum(r.drops)}</td>
       <td>${formatNum(r.shipQty)}</td>
       <td>${formatNum(r.caseEq)}</td>
@@ -994,10 +1036,11 @@
       <td><strong>${(r.score*100).toFixed(1)}</strong></td>
     </tr>`).join("");
 
-    const noun = entityLabel.toLowerCase();
-    $("rowCount").textContent = rows.length + " of " + comp.total + " " + noun + (comp.total===1?"":"s") +
+    const cohortNote = level === "global" ? "" : ` · ranked within each ${level} (${comp.perCohort.length} ${level}${comp.perCohort.length===1?"":"s"})`;
+    $("rowCount").textContent = rows.length + " of " + comp.total + " customer" + (comp.total===1?"":"s") +
       (state.acctTypeFilter ? " · account type: " + state.acctTypeFilter : "") +
-      " · " + (state.mode==="lifetime" ? "monthly average (full history)" : "6-month total (avg of active months)");
+      (state.siteFilter ? " · site: " + state.siteFilter : "") +
+      " · " + (state.mode==="lifetime" ? "monthly average" : "6-month total") + cohortNote;
 
     const pager = $("pager");
     if(rows.length <= PAGE_SIZE){
@@ -1043,12 +1086,17 @@
   // ---------- export: current view ----------
   $("exportCurrentBtn").addEventListener("click", async () => {
     if(!lastComputation) return;
-    const level = state.rankLevel;
-    const entityLabel = LEVEL_LABELS[level];
-    const header = ["Rank","Tier",entityLabel, level==="customer"?"Account Type":"Customers", ...METRICS.map(m=>m.label), "Score"];
+    const level = state.cohortLevel;
+    const header = ["Rank","Tier","Customer", ...(level!=="global"?[LEVEL_LABELS[level]]:[]), "Account Type", ...METRICS.map(m=>m.label), "Score"];
     const lines = [header.join(",")];
-    lastComputation.rows.slice().sort((a,b)=>a.rank-b.rank).forEach(r => {
-      const row = [r.rank, r.tier, csvEscape(r.label), level==="customer"?csvEscape(r.acctType):r.custCount,
+    const sorted = lastComputation.rows.slice().sort((a,b) => {
+      if(level === "global") return a.rank - b.rank;
+      const ac = a.cohort || "", bc = b.cohort || "";
+      if(ac !== bc) return ac < bc ? -1 : 1;
+      return a.rank - b.rank;
+    });
+    sorted.forEach(r => {
+      const row = [r.rank, r.tier, csvEscape(r.label), ...(level!=="global"?[csvEscape(r.cohort)]:[]), csvEscape(r.acctType),
         ...METRICS.map(m => r[m.key].toFixed(2)), (r.score*100).toFixed(2)];
       lines.push(row.join(","));
     });
@@ -1059,27 +1107,25 @@
   $("exportScenariosBtn").addEventListener("click", async () => {
     const names = Object.keys(state.scenarios);
     if(!names.length) return;
-    const rows = getFilteredRows();
-
-    // Build the full customer roster (most recent name/acctType) regardless of any scenario's mode.
-    const roster = new Map();
-    rows.forEach(r => {
-      const existing = roster.get(r.custId);
-      if(!existing || r.monthKey > existing.monthKey) roster.set(r.custId, r);
-    });
+    const rows = getAcctFilteredRows();
 
     const modeCache = {};
     function aggForMode(mode){
-      if(!modeCache[mode]) modeCache[mode] = aggregateEntities(rows, "customer", mode);
+      if(!modeCache[mode]) modeCache[mode] = applySiteFilter(aggregateCustomers(rows, mode));
       return modeCache[mode];
     }
+
+    // Roster: every customer in scope under the "Monthly Average" (full-history)
+    // view, so a customer excluded from a given scenario's 6-month window still
+    // gets a row (with blanks for that scenario) rather than disappearing.
+    const roster = aggForMode("lifetime");
 
     const perScenario = names.map(name => {
       const sc = state.scenarios[name];
       const agg = aggForMode(sc.mode);
-      const tiered = computeTiers(agg, sc.weights, sc.topPct, sc.medPct);
+      const ranked = rankByCohort(agg, sc.cohortLevel || "global", sc.weights, sc.topPct, sc.medPct);
       const map = new Map();
-      tiered.rows.forEach(r => map.set(r.id, r));
+      ranked.rows.forEach(r => map.set(r.id, r));
       return {name, map};
     });
 
@@ -1087,12 +1133,12 @@
     perScenario.forEach(s => header.push(`${s.name} Rank`, `${s.name} Tier`, `${s.name} Score`));
     const lines = [header.map(csvEscape).join(",")];
 
-    Array.from(roster.values())
-      .sort((a,b) => a.custName.localeCompare(b.custName))
+    roster.slice()
+      .sort((a,b) => a.label.localeCompare(b.label))
       .forEach(r => {
-        const row = [csvEscape(r.custName), csvEscape(r.custId), csvEscape(r.acctType)];
+        const row = [csvEscape(r.label), csvEscape(r.id), csvEscape(r.acctType)];
         perScenario.forEach(s => {
-          const m = s.map.get(r.custId);
+          const m = s.map.get(r.id);
           if(m){ row.push(m.rank, m.tier, (m.score*100).toFixed(2)); }
           else { row.push("", "not active in window", ""); }
         });
@@ -1119,7 +1165,10 @@
       return;
     }
     warnEl.style.display = "none";
-    state.scenarios[name] = {weights: Object.assign({}, state.weights), topPct: state.topPct, medPct: state.medPct, mode: state.mode};
+    state.scenarios[name] = {
+      weights: Object.assign({}, state.weights), topPct: state.topPct, medPct: state.medPct,
+      mode: state.mode, cohortLevel: state.cohortLevel
+    };
     persistScenarios();
     $("scenarioNameInput").value = "";
     renderScenarioChips();
@@ -1129,21 +1178,24 @@
     if(!sc) return;
     state.weights = Object.assign({}, sc.weights);
     state.topPct = sc.topPct; state.medPct = sc.medPct; state.mode = sc.mode;
+    state.cohortLevel = sc.cohortLevel || "global";
     $("topPctInput").value = sc.topPct; $("medPctInput").value = sc.medPct;
     $("periodToggle").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.mode===sc.mode));
+    setupRankLevelToggle();
     renderWeights();
     renderScenarioChips(name);
     recompute();
-    refreshVariance();
   }
   function renderScenarioChips(activeName){
     const wrap = $("scenarioChips");
     const names = Object.keys(state.scenarios);
-    wrap.innerHTML = names.map(n => `
-      <span class="scenario-chip ${n===activeName?"active":""}" data-name="${escapeHtml(n)}">
+    wrap.innerHTML = names.map(n => {
+      const sc = state.scenarios[n];
+      return `<span class="scenario-chip ${n===activeName?"active":""}" data-name="${escapeHtml(n)}">
         <span class="apply">${escapeHtml(n)}</span>
         <button data-del="${escapeHtml(n)}">&times;</button>
-      </span>`).join("");
+      </span>`;
+    }).join("");
     wrap.querySelectorAll(".apply").forEach(el => el.addEventListener("click", () => applyScenario(el.parentElement.dataset.name)));
     wrap.querySelectorAll("[data-del]").forEach(el => el.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1155,152 +1207,89 @@
     updateScenarioCountLabel();
   }
 
-  // ---------- variance tab ----------
-  function stddevMean(vals){
-    const n = vals.length;
-    if(n === 0) return {mean:0, sd:0, cv:null};
-    const mean = vals.reduce((a,b)=>a+b,0)/n;
-    if(n < 2 || mean === 0) return {mean, sd:0, cv: mean===0 ? null : 0};
-    const variance = vals.reduce((s,v)=>s+(v-mean)*(v-mean),0)/n;
-    const sd = Math.sqrt(variance);
-    return {mean, sd, cv: (sd/mean)*100};
+  // ---------- site breakdown tab ----------
+  function renderBreakdown(){
+    if(!state.customerAggregates) return;
+    if(!state.hasSite && !state.hasRegion){ $("breakdownCard").style.display = "none"; return; }
+    const groupBy = state.breakdownGroupBy;
+    const comp = rankByCohort(state.customerAggregates, groupBy, state.weights, state.topPct, state.medPct);
+    renderBreakdownTable(comp, groupBy);
+    $("breakdownCard").style.display = "block";
   }
 
-  function computeConcentration(rows, groupBy){
-    // Customer-level aggregates (respecting the current period mode), grouped by site/region.
-    const custAgg = aggregateEntities(rows, "customer", state.mode);
-    const groups = new Map();
-    custAgg.forEach(c => {
-      const key = (groupBy === "site" ? c.site : c.region) || "Unassigned";
-      if(!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(c);
-    });
-    const out = [];
-    groups.forEach((custs, key) => {
-      const entry = {label: key, custCount: custs.length};
-      METRICS.forEach(m => {
-        const stats = stddevMean(custs.map(c => c[m.key]));
-        entry[m.key + "Cv"] = stats.cv;
-      });
-      out.push(entry);
-    });
-    return out;
-  }
+  let lastBreakdown = null, breakdownSortKey = "label", breakdownSortDir = 1;
 
-  function computeVolatility(rows, groupBy){
-    const keyOf = groupBy === "site" ? (r => r.site || "Unassigned") : (r => r.region || "Unassigned");
-    // group -> monthKey -> sums
-    const groups = new Map();
-    rows.forEach(r => {
-      const key = keyOf(r);
-      if(!groups.has(key)) groups.set(key, new Map());
-      const byMonth = groups.get(key);
-      if(!byMonth.has(r.monthKey)) byMonth.set(r.monthKey, {drops:0,shipQty:0,caseEq:0,sls:0});
-      const s = byMonth.get(r.monthKey);
-      s.drops+=r.drops; s.shipQty+=r.shipQty; s.caseEq+=r.caseEq; s.sls+=r.sls;
-    });
-    const out = [];
-    groups.forEach((byMonth, key) => {
-      const monthCount = byMonth.size;
-      const entry = {label: key, monthCount};
-      METRICS.forEach(m => {
-        const stats = stddevMean(Array.from(byMonth.values()).map(v => v[m.key]));
-        entry[m.key + "Cv"] = stats.cv;
-      });
-      out.push(entry);
-    });
-    return out;
-  }
-
-  let lastConcentration = null, lastVolatility = null;
-
-  function refreshVariance(){
-    if(!state.parsedRows.length) return;
-    if(!state.hasSite && !state.hasRegion){
-      $("concentrationCard").style.display = "none";
-      $("volatilityCard").style.display = "none";
-      return;
-    }
-    const groupBy = state.varianceGroupBy;
-    const rows = getFilteredRows();
-    lastConcentration = computeConcentration(rows, groupBy);
-    lastVolatility = computeVolatility(rows, groupBy);
-    renderVarianceTable("concentration", lastConcentration, groupBy);
-    renderVarianceTable("volatility", lastVolatility, groupBy);
-    $("concentrationCard").style.display = "block";
-    $("volatilityCard").style.display = "block";
-  }
-
-  function cvClass(cv){
-    if(cv === null) return "";
-    if(cv < 30) return "cv-low";
-    if(cv < 70) return "cv-mid";
-    return "cv-high";
-  }
-  function fmtCv(cv){ return cv === null ? "—" : cv.toFixed(0) + "%"; }
-
-  function renderVarianceTable(kind, data, groupBy){
+  function renderBreakdownTable(comp, groupBy){
     const entityLabel = groupBy === "site" ? "Site" : "Region";
-    const countLabel = kind === "concentration" ? "Customers" : "Active Months";
-    const countKey = kind === "concentration" ? "custCount" : "monthCount";
-    const headEl = $(kind === "concentration" ? "concentrationHead" : "volatilityHead");
-    const bodyEl = $(kind === "concentration" ? "concentrationBody" : "volatilityBody");
+    const tiers = [{key:"top",label:"Top",cls:"grp-top"},{key:"med",label:"Medium",cls:"grp-med"},{key:"low",label:"Low",cls:"grp-low"}];
+    const metricCols = [{key:"count",label:"Count"},{key:"avgCases",label:"Avg Cases"},{key:"avgSales",label:"Avg Sales"},{key:"casesPerDrop",label:"Cases/Drop"},{key:"salesPerDrop",label:"Sales/Drop"}];
 
-    const cols = [{key:"label", label:entityLabel}, {key:countKey, label:countLabel}]
-      .concat(METRICS.map(m => ({key:m.key+"Cv", label:m.label+" CV%"})));
-    headEl.innerHTML = cols.map(c=>`<th data-key="${c.key}">${c.label}</th>`).join("");
+    const rows = comp.perCohort.map(c => {
+      const stats = computeTierStats(c.rows);
+      return {label: c.key, total: c.size, top: stats.top, med: stats.med, low: stats.low};
+    });
+    lastBreakdown = {rows, groupBy};
 
-    let sortKey = kind === "concentration" ? state.concSortKey || "label" : state.volSortKey || "label";
-    let sortDir = kind === "concentration" ? (state.concSortDir || 1) : (state.volSortDir || 1);
-
-    headEl.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
+    const head = $("breakdownHead");
+    let headHtml = `<th data-key="label">${entityLabel}</th><th data-key="total">Total</th>`;
+    tiers.forEach((t, ti) => {
+      metricCols.forEach((m, mi) => {
+        const divider = mi === 0 ? " grp-divider" : "";
+        headHtml += `<th class="${t.cls}${divider}" data-key="${t.key}.${m.key}">${ti===0||mi===0?t.label+" "+m.label:m.label}</th>`;
+      });
+    });
+    head.innerHTML = headHtml;
+    head.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
       const key = th.dataset.key;
-      if(kind === "concentration"){
-        state.concSortDir = (state.concSortKey === key) ? -(state.concSortDir||1) : 1;
-        state.concSortKey = key;
-      }else{
-        state.volSortDir = (state.volSortKey === key) ? -(state.volSortDir||1) : 1;
-        state.volSortKey = key;
-      }
-      renderVarianceTable(kind, data, groupBy);
+      breakdownSortDir = (breakdownSortKey === key) ? -breakdownSortDir : 1;
+      breakdownSortKey = key;
+      renderBreakdownBody();
     }));
+    renderBreakdownBody();
 
-    const rows = data.slice().sort((a,b) => {
-      let av = a[sortKey], bv = b[sortKey];
-      if(av === null) av = -1; if(bv === null) bv = -1;
-      if(typeof av === "string") av = av.toLowerCase();
-      if(typeof bv === "string") bv = bv.toLowerCase();
-      if(av < bv) return -1*sortDir;
-      if(av > bv) return 1*sortDir;
-      return 0;
-    });
-
-    bodyEl.innerHTML = rows.map(r => `<tr>
-      <td class="cust-name">${escapeHtml(r.label)}</td>
-      <td>${formatNum(r[countKey])}</td>
-      ${METRICS.map(m => `<td class="cv-cell ${cvClass(r[m.key+"Cv"])}">${fmtCv(r[m.key+"Cv"])}</td>`).join("")}
-    </tr>`).join("");
+    function renderBreakdownBody(){
+      const sorted = rows.slice().sort((a,b) => {
+        let av, bv;
+        if(breakdownSortKey.includes(".")){
+          const [t,m] = breakdownSortKey.split(".");
+          av = a[t][m]; bv = b[t][m];
+        }else{
+          av = a[breakdownSortKey]; bv = b[breakdownSortKey];
+        }
+        if(typeof av === "string") av = av.toLowerCase();
+        if(typeof bv === "string") bv = bv.toLowerCase();
+        if(av < bv) return -1*breakdownSortDir;
+        if(av > bv) return 1*breakdownSortDir;
+        return 0;
+      });
+      const body = $("breakdownBody");
+      body.innerHTML = sorted.map(r => {
+        let rowHtml = `<td class="cust-name">${escapeHtml(r.label)}</td><td>${formatNum(r.total)}</td>`;
+        tiers.forEach(t => {
+          const s = r[t.key];
+          rowHtml += `<td class="grp-divider">${formatNum(s.count)}</td><td>${formatNum(s.avgCases)}</td><td>${formatCurrency(s.avgSales)}</td><td>${formatNum(s.casesPerDrop)}</td><td>${formatCurrency(s.salesPerDrop)}</td>`;
+        });
+        return `<tr>${rowHtml}</tr>`;
+      }).join("");
+    }
   }
 
-  function exportVarianceCsv(kind, data, groupBy){
-    const entityLabel = groupBy === "site" ? "Site" : "Region";
-    const countLabel = kind === "concentration" ? "Customers" : "Active Months";
-    const countKey = kind === "concentration" ? "custCount" : "monthCount";
-    const header = [entityLabel, countLabel, ...METRICS.map(m=>m.label+" CV%")];
+  $("exportBreakdownBtn").addEventListener("click", async () => {
+    if(!lastBreakdown) return;
+    const entityLabel = lastBreakdown.groupBy === "site" ? "Site" : "Region";
+    const tiers = ["top","med","low"];
+    const header = [entityLabel, "Total"];
+    tiers.forEach(t => header.push(t+" Count", t+" AvgCases", t+" AvgSales", t+" CasesPerDrop", t+" SalesPerDrop"));
     const lines = [header.join(",")];
-    data.forEach(r => {
-      const row = [csvEscape(r.label), r[countKey], ...METRICS.map(m => r[m.key+"Cv"]===null?"":r[m.key+"Cv"].toFixed(2))];
+    lastBreakdown.rows.forEach(r => {
+      const row = [csvEscape(r.label), r.total];
+      tiers.forEach(t => {
+        const s = r[t];
+        row.push(s.count, s.avgCases.toFixed(2), s.avgSales.toFixed(2), s.casesPerDrop.toFixed(2), s.salesPerDrop.toFixed(2));
+      });
       lines.push(row.join(","));
     });
-    return lines.join("\n");
-  }
-  $("exportConcentrationBtn").addEventListener("click", async () => {
-    if(!lastConcentration) return;
-    await downloadCsv("concentration_by_" + state.varianceGroupBy + ".csv", exportVarianceCsv("concentration", lastConcentration, state.varianceGroupBy));
-  });
-  $("exportVolatilityBtn").addEventListener("click", async () => {
-    if(!lastVolatility) return;
-    await downloadCsv("volatility_by_" + state.varianceGroupBy + ".csv", exportVarianceCsv("volatility", lastVolatility, state.varianceGroupBy));
+    await downloadCsv("site_breakdown_by_" + lastBreakdown.groupBy + ".csv", lines.join("\n"));
   });
 
   // ---------- utils ----------

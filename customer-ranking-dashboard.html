@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Customer Ranking Dashboard</title>
+<title>Customer Tiering Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -11,9 +11,9 @@
     --ink:#171a1f; --paper:#eceef1; --surface:#ffffff; --surface-2:#f4f5f7; --border:#d9dce2; --muted:#5c6472;
     --accent:#a8721f; --accent-soft:#f3e6d2; --accent-ink:#171a1f;
     --good:#2f7a5c; --good-soft:#e2efe9; --bad:#a83f3f; --bad-soft:#f5e3e2;
-    --medal-1:#c9971f; --medal-1-soft:#faf0d8;
-    --medal-2:#7b8794; --medal-2-soft:#eceef1;
-    --medal-3:#a06a3c; --medal-3-soft:#f2e5d8;
+    --tier-top:#c9971f; --tier-top-soft:#faf0d8;
+    --tier-med:#2f7a8c; --tier-med-soft:#e1eef1;
+    --tier-low:#767f8c; --tier-low-soft:#eceef1;
     --shadow:0 1px 2px rgba(23,26,31,.05), 0 4px 12px rgba(23,26,31,.05);
     --radius:10px;
     --font-ui:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -24,54 +24,41 @@
       --ink:#e9ebef; --paper:#14161a; --surface:#1b1e24; --surface-2:#20232a; --border:#2c303a; --muted:#9198a6;
       --accent:#e0ab52; --accent-soft:#3a2f1a; --accent-ink:#14161a;
       --good:#5cb890; --good-soft:#1c2e27; --bad:#e08585; --bad-soft:#32201f;
-      --medal-1:#e0ab52; --medal-1-soft:#3a2f1a;
-      --medal-2:#9aa3b0; --medal-2-soft:#242730;
-      --medal-3:#c98c5c; --medal-3-soft:#33251b;
+      --tier-top:#e0ab52; --tier-top-soft:#3a2f1a;
+      --tier-med:#5db3c4; --tier-med-soft:#1c2c30;
+      --tier-low:#9aa3b0; --tier-low-soft:#242730;
     }
   }
   :root[data-theme="dark"]{
     --ink:#e9ebef; --paper:#14161a; --surface:#1b1e24; --surface-2:#20232a; --border:#2c303a; --muted:#9198a6;
     --accent:#e0ab52; --accent-soft:#3a2f1a; --accent-ink:#14161a;
     --good:#5cb890; --good-soft:#1c2e27; --bad:#e08585; --bad-soft:#32201f;
-    --medal-1:#e0ab52; --medal-1-soft:#3a2f1a;
-    --medal-2:#9aa3b0; --medal-2-soft:#242730;
-    --medal-3:#c98c5c; --medal-3-soft:#33251b;
+    --tier-top:#e0ab52; --tier-top-soft:#3a2f1a;
+    --tier-med:#5db3c4; --tier-med-soft:#1c2c30;
+    --tier-low:#9aa3b0; --tier-low-soft:#242730;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:var(--font-ui);background:var(--paper);color:var(--ink);
-    -webkit-font-smoothing:antialiased;}
+  body{margin:0;font-family:var(--font-ui);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
   h1,h2,h3{text-wrap:balance;}
   header{
-    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
     padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--border);
-    position:sticky;top:0;z-index:10;
+    position:sticky;top:0;z-index:20;
   }
   header h1{font-size:16px;margin:0;font-weight:800;letter-spacing:-.01em;}
   header .sub{font-size:12px;color:var(--muted);margin-top:2px;font-weight:500;}
-  .header-actions{display:flex;gap:8px;align-items:center;}
-  .layout{display:grid;grid-template-columns:340px 1fr;gap:0;min-height:calc(100vh - 57px);}
-  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
-  .sidebar{border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:22px;
-    background:var(--surface);overflow-y:auto;}
-  .main{padding:20px 24px;overflow-x:auto;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
-  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
-    margin:0 0 10px;display:flex;align-items:center;gap:7px;}
-  .section-title .step{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
-    border-radius:50%;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);
-    font-family:var(--font-mono);font-size:9px;font-weight:600;flex:none;}
-  .dropzone{
-    border:2px dashed var(--border);border-radius:var(--radius);padding:22px 12px;text-align:center;
-    cursor:pointer;transition:.15s;font-size:13px;color:var(--muted);
-  }
-  .dropzone.drag{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
-  .dropzone strong{color:var(--accent);}
-  input[type=file]{display:none;}
+  .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .page{max-width:1280px;margin:0 auto;padding:20px 24px 60px;display:flex;flex-direction:column;gap:16px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0;display:flex;align-items:center;gap:7px;}
+  .section-title .step{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-family:var(--font-mono);font-size:9px;font-weight:600;flex:none;}
   select,input[type=text],input[type=number]{
-    width:100%;padding:7px 9px;border-radius:7px;border:1px solid var(--border);
-    background:var(--surface-2);color:var(--ink);font-size:13px;font-family:var(--font-ui);
+    padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);
+    font-size:13px;font-family:var(--font-ui);
   }
-  label.field{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
+  label.field{display:block;font-size:11.5px;color:var(--muted);margin:0 0 4px;font-weight:600;}
   button{
     font-family:var(--font-ui);cursor:pointer;border:none;border-radius:7px;padding:7px 12px;font-size:13px;font-weight:700;
     background:var(--accent);color:var(--accent-ink);transition:filter .1s;
@@ -79,59 +66,105 @@
   button:hover{filter:brightness(1.08);}
   button.secondary{background:var(--surface-2);color:var(--ink);border:1px solid var(--border);}
   button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:4px 8px;font-size:12px;font-weight:600;}
+  button.link{background:none;border:none;color:var(--accent);padding:0;font-size:12.5px;font-weight:700;}
   button:disabled{opacity:.4;cursor:not-allowed;}
-  .metric-row{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--surface-2);}
-  .metric-row .top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-  .metric-row .top label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .metric-row .controls{display:flex;align-items:center;gap:10px;margin-top:9px;}
-  .metric-row input[type=range]{
+
+  /* ---- setup card ---- */
+  .dropzone{
+    border:2px dashed var(--border);border-radius:var(--radius);padding:20px 12px;text-align:center;
+    cursor:pointer;transition:.15s;font-size:13px;color:var(--muted);
+  }
+  .dropzone.drag{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
+  .dropzone strong{color:var(--accent);}
+  input[type=file]{display:none;}
+  .setup-grid{display:grid;grid-template-columns:1.1fr 2fr;gap:20px;}
+  @media (max-width:800px){.setup-grid{grid-template-columns:1fr;}}
+  .mapping-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(160px,1fr));gap:10px;}
+  .mapping-grid .unmapped select{border-color:var(--bad);}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .sheet-picker{display:flex;gap:8px;align-items:center;margin-top:8px;}
+  .mapped-summary{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--good);font-weight:700;}
+  .mapped-summary svg{flex:none;}
+
+  /* ---- controls card ---- */
+  .controls-row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;}
+  .control-block{display:flex;flex-direction:column;gap:4px;}
+  .segmented{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .segmented button{background:var(--surface-2);color:var(--muted);border-radius:0;padding:8px 14px;font-size:12.5px;}
+  .segmented button.active{background:var(--accent);color:var(--accent-ink);}
+  .weights-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(200px,1fr));gap:12px;margin-bottom:18px;}
+  .weight-card{border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--surface-2);}
+  .weight-card .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .weight-card .top strong{font-size:13px;}
+  .weight-card .controls{display:flex;align-items:center;gap:10px;}
+  input[type=range]{
     flex:1;appearance:none;-webkit-appearance:none;height:4px;border-radius:2px;
     background:linear-gradient(90deg, var(--accent) 0%, var(--accent) calc(var(--pct,0)*1%), var(--border) calc(var(--pct,0)*1%), var(--border) 100%);
   }
-  .metric-row input[type=range]::-webkit-slider-thumb{
+  input[type=range]::-webkit-slider-thumb{
     -webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--accent);
     border:2px solid var(--surface);box-shadow:0 0 0 1px var(--accent);cursor:pointer;margin-top:-1px;
   }
-  .metric-row input[type=range]::-moz-range-thumb{
+  input[type=range]::-moz-range-thumb{
     width:15px;height:15px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);
     box-shadow:0 0 0 1px var(--accent);cursor:pointer;
   }
-  .metric-row .wnum{width:54px;text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
-  .dir-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:10.5px;font-family:var(--font-mono);flex:none;}
-  .dir-toggle span{padding:3px 7px;cursor:pointer;color:var(--muted);}
-  .dir-toggle span.active{background:var(--accent);color:var(--accent-ink);font-weight:600;}
-  .weight-sum{font-size:11px;color:var(--muted);margin-top:6px;text-align:right;font-family:var(--font-mono);}
+  .weight-card .wnum{width:48px;text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  .weight-sum{font-size:11px;color:var(--muted);text-align:right;font-family:var(--font-mono);margin-bottom:16px;}
   .weight-sum.warn{color:var(--bad);}
+  .thresholds-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
+  .thresholds-row .control-block input{width:70px;}
+  .tier-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:4px;}
+  .tier-bar span{display:block;height:100%;}
+  .tier-bar .seg-top{background:var(--tier-top);}
+  .tier-bar .seg-med{background:var(--tier-med);}
+  .tier-bar .seg-low{background:var(--tier-low);}
+  .scenario-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border);}
+  .scenario-row input[type=text]{flex:1;min-width:160px;}
+  .scenario-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;border:1px solid var(--border);
+    background:var(--surface-2);font-size:12px;font-weight:600;cursor:pointer;}
+  .scenario-chip.active{border-color:var(--accent);background:var(--accent-soft);}
+  .scenario-chip button{background:none;border:none;color:var(--muted);padding:0;font-size:13px;font-weight:700;line-height:1;}
+
+  /* ---- tier summary ---- */
+  .tier-summary{display:grid;grid-template-columns:repeat(auto-fit, minmax(230px,1fr));gap:14px;}
+  .tier-card{border-radius:var(--radius);padding:16px 18px;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);}
+  .tier-card .tier-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .tier-card .tier-name{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:7px;}
+  .tier-card .tier-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .tier-card.top .tier-dot{background:var(--tier-top);} .tier-card.top .tier-name{color:var(--tier-top);}
+  .tier-card.med .tier-dot{background:var(--tier-med);} .tier-card.med .tier-name{color:var(--tier-med);}
+  .tier-card.low .tier-dot{background:var(--tier-low);} .tier-card.low .tier-name{color:var(--tier-low);}
+  .tier-card .count{font-family:var(--font-mono);font-size:12px;color:var(--muted);}
+  .tier-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+  .tier-metric label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+  .tier-metric .val{font-family:var(--font-mono);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}
+
+  /* ---- results table ---- */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .toolbar .search{max-width:260px;width:100%;}
   table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface);}
   thead th{position:sticky;top:0;background:var(--surface);z-index:2;}
   th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
   th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;user-select:none;font-weight:700;}
   th:hover{color:var(--ink);}
   td{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;}
-  td:nth-child(2){font-family:var(--font-ui);font-weight:600;font-size:13px;}
+  td.cust-name{font-family:var(--font-ui);font-weight:600;font-size:13px;}
   tbody tr:hover{background:var(--surface-2);}
-  .rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:22px;
-    border-radius:6px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:11.5px;padding:0 6px;
-    font-family:var(--font-mono);border:1px solid var(--border);}
-  .rank-badge.medal-1{background:var(--medal-1-soft);color:var(--medal-1);border-color:var(--medal-1);}
-  .rank-badge.medal-2{background:var(--medal-2-soft);color:var(--medal-2);border-color:var(--medal-2);}
-  .rank-badge.medal-3{background:var(--medal-3-soft);color:var(--medal-3);border-color:var(--medal-3);}
-  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;
-    color:var(--muted);text-align:center;gap:8px;}
+  .rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:22px;border-radius:6px;
+    background:var(--surface-2);color:var(--muted);font-weight:700;font-size:11.5px;padding:0 6px;font-family:var(--font-mono);border:1px solid var(--border);}
+  .tier-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;font-family:var(--font-ui);}
+  .tier-pill.top{background:var(--tier-top-soft);color:var(--tier-top);}
+  .tier-pill.med{background:var(--tier-med-soft);color:var(--tier-med);}
+  .tier-pill.low{background:var(--tier-low-soft);color:var(--tier-low);}
+  .table-wrap{overflow-x:auto;}
+  .pager{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px;font-size:12.5px;color:var(--muted);}
+  .pager button{padding:5px 10px;}
+
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 20px;color:var(--muted);text-align:center;gap:8px;}
   .empty-state svg{opacity:.5;margin-bottom:8px;color:var(--accent);}
-  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-  .toolbar .search{max-width:260px;}
-  .scenario-list{display:flex;flex-direction:column;gap:6px;}
-  .scenario-item{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-radius:7px;
-    border:1px solid var(--border);font-size:12.5px;background:var(--surface-2);}
-  .scenario-item.active{border-color:var(--accent);background:var(--accent-soft);}
-  .scenario-item .name{cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
-  .scenario-item .btns{display:flex;gap:4px;}
-  .pill{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:700;}
-  .hint{font-size:11.5px;color:var(--muted);line-height:1.5;}
-  .compare-cell{color:var(--muted);font-size:11px;}
-  .sheet-picker{display:flex;gap:8px;align-items:center;margin-top:8px;}
-  .badge-count{background:var(--accent);color:var(--accent-ink);border-radius:99px;font-size:10px;font-family:var(--font-mono);padding:1px 6px;margin-left:2px;}
+  .badge-count{background:var(--accent);color:var(--accent-ink);border-radius:99px;font-size:10px;font-family:var(--font-mono);padding:1px 6px;}
+  .warn-text{font-size:11.5px;color:var(--bad);margin-top:4px;}
   ::-webkit-scrollbar{width:9px;height:9px;}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
 </style>
@@ -140,101 +173,167 @@
 
 <header>
   <div>
-    <h1>Customer Ranking Dashboard</h1>
-    <div class="sub">Upload data, weight your metrics, dense-rank customers</div>
+    <h1>Customer Tiering Dashboard</h1>
+    <div class="sub">Upload monthly activity, weight your metrics, and segment customers into Top / Medium / Low tiers</div>
   </div>
   <div class="header-actions">
-    <select id="scenarioSelect" style="min-width:180px;"></select>
     <button class="secondary" id="loadSampleBtn">Load sample data</button>
     <button id="exportBtn" disabled>Export results (CSV)</button>
   </div>
 </header>
 
-<div class="layout">
-  <aside class="sidebar">
+<div class="page">
 
-    <div>
+  <section class="card" id="setupCard">
+    <div class="card-head">
       <p class="section-title"><span class="step">1</span> Data source</p>
-      <div class="dropzone" id="dropzone">
-        <div><strong>Click to upload</strong> or drag a file here</div>
-        <div style="margin-top:4px;">.xlsx, .xls, .csv supported</div>
-      </div>
-      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
-      <div class="sheet-picker" id="sheetPicker" style="display:none;">
-        <label class="field" style="margin:0;flex:0 0 auto;">Sheet:</label>
-        <select id="sheetSelect"></select>
-      </div>
-      <div id="fileStatus" class="hint" style="margin-top:8px;"></div>
-    </div>
-
-    <div id="idColumnBlock" style="display:none;">
-      <p class="section-title"><span class="step">2</span> Customer identifier</p>
-      <select id="idColumnSelect"></select>
-    </div>
-
-    <div id="metricsBlock" style="display:none;">
-      <p class="section-title"><span class="step">3</span> Metrics &amp; weights <span class="badge-count" id="metricCount">0</span></p>
-      <div id="metricsList"></div>
-      <div class="weight-sum" id="weightSum"></div>
-      <button class="secondary" id="equalizeBtn" style="margin-top:8px;width:100%;">Equalize weights</button>
-    </div>
-
-    <div id="scenarioBlock" style="display:none;">
-      <p class="section-title"><span class="step">4</span> Scenarios</p>
-      <div style="display:flex;gap:6px;">
-        <input type="text" id="scenarioNameInput" placeholder="Scenario name (e.g. Growth-focused)">
-        <button id="saveScenarioBtn">Save</button>
-      </div>
-      <div class="scenario-list" id="scenarioList" style="margin-top:10px;"></div>
-      <p class="hint" style="margin-top:8px;">Saved scenarios persist in this browser (localStorage) and reapply weights by metric name.</p>
-    </div>
-
-  </aside>
-
-  <main class="main">
-    <div id="emptyState" class="empty-state">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
-      <div><strong>No data loaded yet.</strong></div>
-      <div>Upload an Excel/CSV file, or click "Load sample data" above to try the dashboard.</div>
-    </div>
-
-    <div id="resultsWrap" style="display:none;">
-      <div class="toolbar">
-        <div><span id="rowCount" class="hint"></span></div>
-        <input type="text" id="searchBox" class="search" placeholder="Filter customers...">
-      </div>
-      <div style="overflow-x:auto;">
-        <table id="resultsTable">
-          <thead><tr id="tableHead"></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+      <div id="mappedSummary" style="display:none;">
+        <span class="mapped-summary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          Columns mapped
+        </span>
+        <button class="link" id="editMappingBtn" style="margin-left:10px;">Edit mapping</button>
       </div>
     </div>
-  </main>
+    <div class="setup-grid" id="setupGrid">
+      <div>
+        <div class="dropzone" id="dropzone">
+          <div><strong>Click to upload</strong> or drag a file here</div>
+          <div style="margin-top:4px;">.xlsx, .xls, .csv &middot; monthly customer activity</div>
+        </div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+        <div class="sheet-picker" id="sheetPicker" style="display:none;">
+          <label class="field" style="margin:0;flex:0 0 auto;">Sheet:</label>
+          <select id="sheetSelect"></select>
+        </div>
+        <div id="fileStatus" class="hint" style="margin-top:8px;"></div>
+      </div>
+      <div id="mappingWrap">
+        <p class="hint" style="margin:0 0 10px;">Map each field to a column from your file. Drops, Ship Qty, Cases and Sales are auto-detected when named like the source system; override any of them if needed.</p>
+        <div class="mapping-grid" id="mappingGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="controlsCard" style="display:none;">
+    <p class="section-title" style="margin-bottom:14px;"><span class="step">2</span> Scenario controls</p>
+
+    <div class="controls-row">
+      <div class="control-block">
+        <label class="field">Period</label>
+        <div class="segmented" id="periodToggle">
+          <button data-mode="lifetime" class="active">Monthly Average</button>
+          <button data-mode="window6">6-Month Total</button>
+        </div>
+      </div>
+      <div class="control-block">
+        <label class="field">Account type</label>
+        <select id="acctTypeFilter" style="min-width:180px;"></select>
+      </div>
+      <div class="control-block" style="flex:1;min-width:200px;">
+        <label class="field" id="periodExplainLabel">&nbsp;</label>
+        <div class="hint" id="periodExplain"></div>
+      </div>
+    </div>
+
+    <label class="field" style="margin-bottom:8px;">Metric weights</label>
+    <div class="weights-grid" id="weightsGrid"></div>
+    <div class="weight-sum" id="weightSum"></div>
+
+    <label class="field" style="margin-bottom:8px;">Tier thresholds (by percentile of ranked customers)</label>
+    <div class="thresholds-row">
+      <div class="control-block">
+        <label class="field">Top tier &le;</label>
+        <input type="number" id="topPctInput" min="1" max="98" value="20"> %
+      </div>
+      <div class="control-block">
+        <label class="field">Medium tier &le;</label>
+        <input type="number" id="medPctInput" min="2" max="99" value="50"> %
+      </div>
+      <div class="control-block" style="flex:1;min-width:220px;">
+        <label class="field" id="tierLabelsRow">Top 1&ndash;20% &middot; Medium 21&ndash;50% &middot; Low 51&ndash;100%</label>
+        <div class="tier-bar"><span class="seg-top" id="segTop"></span><span class="seg-med" id="segMed"></span><span class="seg-low" id="segLow"></span></div>
+      </div>
+      <button class="secondary" id="equalizeBtn">Equalize weights</button>
+    </div>
+    <div class="warn-text" id="thresholdWarn" style="display:none;"></div>
+
+    <div class="scenario-row">
+      <input type="text" id="scenarioNameInput" placeholder="Save current weights/thresholds as a scenario...">
+      <button id="saveScenarioBtn">Save scenario</button>
+      <div id="scenarioChips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+  </section>
+
+  <section class="tier-summary" id="tierSummary" style="display:none;"></section>
+
+  <section class="card" id="resultsCard" style="display:none;">
+    <div class="toolbar">
+      <div><span id="rowCount" class="hint"></span></div>
+      <input type="text" id="searchBox" class="search" placeholder="Filter customers...">
+    </div>
+    <div class="table-wrap">
+      <table id="resultsTable">
+        <thead><tr id="tableHead"></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </section>
+
+  <div id="emptyState" class="empty-state">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+    <div><strong>No data loaded yet.</strong></div>
+    <div>Upload monthly customer activity (Drops, Ship Qty, Cases, Sales), or click "Load sample data" above to try the dashboard.</div>
+  </div>
+
 </div>
 
 <script>
 (function(){
   "use strict";
 
+  const METRICS = [
+    {key:"drops",   label:"Drops"},
+    {key:"shipQty", label:"Ship Qty"},
+    {key:"caseEq",  label:"Cases"},
+    {key:"sls",     label:"Sales"}
+  ];
+  const FIELD_ALIASES = {
+    custId:   ["sitecustid","custid","customerid","acctid","accountid","customernumber","custnum"],
+    custName: ["custnm","customername","custname"],
+    month:    ["fiscmoid","fiscalmonth","fiscmo","period","month","yyyymm","monthid","fiscalperiod","date"],
+    acctType: ["custaccttyp","accounttype","accttype","customertype","channel","custtype"],
+    drops:    ["drops","dropcount","stops","stopcount"],
+    shipQty:  ["shipqty","shipquantity","shippedqty","shipqnty","units","unitshipped"],
+    caseEq:   ["caseeq","cases","caseequiv","caseequivalent","caseeqty"],
+    sls:      ["sls","sales","revenue","netsales","salesamt","salesamount"]
+  };
+  const FIELD_LABELS = {
+    custId:"Customer ID", custName:"Customer Name", month:"Month / Period", acctType:"Account Type",
+    drops:"Drops", shipQty:"Ship Qty", caseEq:"Cases", sls:"Sales"
+  };
+  const REQUIRED_FIELDS = ["custId","month","drops","shipQty","caseEq","sls"];
+
   const state = {
-    headers: [], rows: [], idColumn: null,
-    metrics: [],            // {name, included, weight, direction:1|-1}
-    scenarios: {},          // name -> {idColumn, metrics:[...]}
-    activeScenario: null,
+    headers: [], rawRows: [],
+    mapping: {},                 // field -> header name
+    parsedRows: [],              // normalized rows after mapping applied
+    acctTypeOptions: [],
+    mode: "lifetime",            // 'lifetime' | 'window6'
+    weights: {drops:25, shipQty:25, caseEq:25, sls:25},
+    topPct: 20, medPct: 50,
+    acctTypeFilter: "",
+    scenarios: {},
     sortKey: "rank", sortDir: 1,
-    searchTerm: ""
+    searchTerm: "", page: 0
   };
 
   const $ = (id) => document.getElementById(id);
-  const SCENARIO_KEY = "crd_scenarios_v1";
+  const SCENARIO_KEY = "ctd_scenarios_v1";
 
-  // ---------- persistence ----------
-  function loadScenariosFromStorage(){
-    try{
-      const raw = localStorage.getItem(SCENARIO_KEY);
-      state.scenarios = raw ? JSON.parse(raw) : {};
-    }catch(e){ state.scenarios = {}; }
+  function loadScenarios(){
+    try{ state.scenarios = JSON.parse(localStorage.getItem(SCENARIO_KEY) || "{}"); }catch(e){ state.scenarios = {}; }
   }
   function persistScenarios(){
     try{ localStorage.setItem(SCENARIO_KEY, JSON.stringify(state.scenarios)); }catch(e){}
@@ -243,37 +342,27 @@
   // ---------- file handling ----------
   const dropzone = $("dropzone"), fileInput = $("fileInput");
   dropzone.addEventListener("click", () => fileInput.click());
-  ["dragenter","dragover"].forEach(evt => dropzone.addEventListener(evt, e=>{
-    e.preventDefault(); dropzone.classList.add("drag");
-  }));
-  ["dragleave","drop"].forEach(evt => dropzone.addEventListener(evt, e=>{
-    e.preventDefault(); dropzone.classList.remove("drag");
-  }));
-  dropzone.addEventListener("drop", e=>{
-    const f = e.dataTransfer.files[0];
-    if(f) handleFile(f);
-  });
-  fileInput.addEventListener("change", e=>{
-    const f = e.target.files[0];
-    if(f) handleFile(f);
-  });
-
-  let workbookCache = null;
+  ["dragenter","dragover"].forEach(evt => dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add("drag"); }));
+  ["dragleave","drop"].forEach(evt => dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove("drag"); }));
+  dropzone.addEventListener("drop", e=>{ const f = e.dataTransfer.files[0]; if(f) handleFile(f); });
+  fileInput.addEventListener("change", e=>{ const f = e.target.files[0]; if(f) handleFile(f); });
 
   function handleFile(file){
     $("fileStatus").textContent = "Reading " + file.name + "...";
     const reader = new FileReader();
     reader.onload = function(e){
-      try{
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, {type:"array"});
-        workbookCache = wb;
-        populateSheetPicker(wb);
-        loadSheet(wb, wb.SheetNames[0]);
-        $("fileStatus").textContent = "Loaded " + file.name;
-      }catch(err){
-        $("fileStatus").textContent = "Could not parse file: " + err.message;
-      }
+      // Defer the heavy parse/aggregate work one tick so the "Reading..." status
+      // actually paints before the main thread blocks on a large file.
+      setTimeout(() => {
+        try{
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, {type:"array"});
+          populateSheetPicker(wb);
+          loadSheet(wb, wb.SheetNames[0], file.name);
+        }catch(err){
+          $("fileStatus").textContent = "Could not parse file: " + err.message;
+        }
+      }, 10);
     };
     reader.readAsArrayBuffer(file);
   }
@@ -289,290 +378,476 @@
     }
   }
 
-  function loadSheet(wb, sheetName){
-    const ws = wb.Sheets[sheetName];
-    const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, blankrows:false});
+  function loadSheet(wb, sheetName, displayName){
+    $("fileStatus").textContent = "Parsing rows...";
+    const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null, blankrows:false});
     if(!json.length){ $("fileStatus").textContent = "Sheet is empty."; return; }
     const headers = json[0].map((h,i)=> h===null || h==="" ? ("Column "+(i+1)) : String(h));
-    const rows = json.slice(1).map(r => {
-      const obj = {};
-      headers.forEach((h,i)=> obj[h] = r[i] === undefined ? null : r[i]);
-      return obj;
-    }).filter(r => Object.values(r).some(v => v !== null && v !== ""));
-
+    const rows = json.slice(1).filter(r => r.some(v => v !== null && v !== ""));
     state.headers = headers;
-    state.rows = rows;
-    setupColumns();
+    state.rawRows = rows;
+    autoDetectMapping();
+    renderMappingGrid();
+    $("fileStatus").textContent = "Computing aggregates for " + rows.length.toLocaleString() + " rows...";
+    setTimeout(() => {
+      tryApplyMapping();
+      $("fileStatus").textContent = (displayName ? "Loaded " + displayName + " — " : "Loaded ") +
+        rows.length.toLocaleString() + " rows.";
+    }, 10);
   }
 
   function loadSampleData(){
-    const headers = ["Customer","Annual Revenue","Ticket Volume","CSAT Score","Days Late","Growth %","NPS"];
-    const names = ["Acme Corp","Globex","Initech","Umbrella Inc","Stark Industries","Wayne Enterprises","Hooli","Soylent Co","Wonka Industries","Vandelay Industries","Pied Piper","Massive Dynamic"];
-    const rows = names.map(n => ({
-      "Customer": n,
-      "Annual Revenue": Math.round(50000 + Math.random()*950000),
-      "Ticket Volume": Math.round(2 + Math.random()*80),
-      "CSAT Score": +(2.5 + Math.random()*2.5).toFixed(2),
-      "Days Late": Math.round(Math.random()*30),
-      "Growth %": +(-10 + Math.random()*40).toFixed(1),
-      "NPS": Math.round(-20 + Math.random()*100)
-    }));
+    const headers = ["fisc_mo_id","cust_acct_typ","site_cust_id","cust_nm","drops","ship_qty","case_eq","sls"];
+    const acctTypes = ["TRS","TRP","OTH","WHS"];
+    const names = ["5th and Taylor","Brydens Market","Firefly","Chico Cantina","Goin Coastal Seafood","Union Tavern",
+      "The Alden","Cobalt Restaurant","Magnolia House","Peach Street Diner","Ironwood Grill","Bayou Kitchen",
+      "Harbor Point Cafe","North End Bistro","Copper Still BBQ","Lakeside Provisions","Elm & Vine","The Pantry Co",
+      "Saltwater Social","Miller Street Market"];
+    const months = [202609,202610,202611,202612,202701,202702];
+    const rows = [];
+    names.forEach((name, i) => {
+      const acct = acctTypes[i % acctTypes.length];
+      const base = 300 + Math.random()*2200;
+      const activeSpan = 3 + Math.floor(Math.random()*4); // 3-6 active months
+      const activeMonths = months.slice(months.length - activeSpan);
+      activeMonths.forEach(m => {
+        const wobble = 0.75 + Math.random()*0.5;
+        const drops = Math.max(1, Math.round((4 + Math.random()*14) * wobble));
+        const caseEq = Math.max(1, Math.round((20 + Math.random()*90) * wobble));
+        const shipQty = +(caseEq * (12 + Math.random()*8)).toFixed(2);
+        const sls = +(base * wobble * (1 + Math.random()*0.3)).toFixed(2);
+        rows.push([m, acct, "SMP-"+(100+i), name, drops, shipQty, caseEq, sls]);
+      });
+    });
     state.headers = headers;
-    state.rows = rows;
-    $("fileStatus").textContent = "Loaded sample dataset (" + rows.length + " customers).";
+    state.rawRows = rows;
+    $("fileStatus").textContent = "Loaded sample dataset (" + names.length + " customers, 6 fiscal months).";
     $("sheetPicker").style.display = "none";
-    setupColumns();
+    autoDetectMapping();
+    renderMappingGrid();
+    tryApplyMapping();
   }
   $("loadSampleBtn").addEventListener("click", loadSampleData);
 
-  // ---------- column setup ----------
-  function isNumericColumn(h){
-    let numeric = 0, total = 0;
-    for(const r of state.rows){
-      const v = r[h];
-      if(v === null || v === "") continue;
-      total++;
-      if(typeof v === "number" || (typeof v === "string" && v.trim() !== "" && !isNaN(parseFloat(v)))) numeric++;
-    }
-    return total > 0 && numeric/total >= 0.7;
+  // ---------- column mapping ----------
+  function normalizeHeader(h){ return String(h).toLowerCase().replace(/[^a-z0-9]/g,""); }
+
+  function autoDetectMapping(){
+    const normed = state.headers.map(h => ({h, n: normalizeHeader(h)}));
+    const mapping = {};
+    Object.keys(FIELD_ALIASES).forEach(field => {
+      const aliases = FIELD_ALIASES[field];
+      let found = normed.find(x => aliases.includes(x.n));
+      if(!found) found = normed.find(x => aliases.some(a => x.n.includes(a)));
+      mapping[field] = found ? found.h : "";
+    });
+    state.mapping = mapping;
   }
 
-  function setupColumns(){
-    const idSel = $("idColumnSelect");
-    idSel.innerHTML = state.headers.map(h=>`<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join("");
-    // guess id column: first non-numeric column
-    const guess = state.headers.find(h => !isNumericColumn(h)) || state.headers[0];
-    idSel.value = guess;
-    state.idColumn = guess;
-    idSel.onchange = () => { state.idColumn = idSel.value; buildMetricsFromColumns(); recompute(); };
+  function renderMappingGrid(){
+    const grid = $("mappingGrid");
+    grid.innerHTML = Object.keys(FIELD_LABELS).map(field => {
+      const options = ["<option value=\"\">— none —</option>"].concat(
+        state.headers.map(h => `<option value="${escapeHtml(h)}" ${state.mapping[field]===h?"selected":""}>${escapeHtml(h)}</option>`)
+      ).join("");
+      const isUnmapped = REQUIRED_FIELDS.includes(field) && !state.mapping[field];
+      return `<div class="${isUnmapped?"unmapped":""}">
+        <label class="field">${FIELD_LABELS[field]}${REQUIRED_FIELDS.includes(field)?" *":""}</label>
+        <select data-field="${field}">${options}</select>
+      </div>`;
+    }).join("");
+    grid.querySelectorAll("select").forEach(sel => sel.addEventListener("change", e => {
+      state.mapping[e.target.dataset.field] = e.target.value;
+      renderMappingGrid();
+      tryApplyMapping();
+    }));
+  }
 
-    $("idColumnBlock").style.display = "block";
-    buildMetricsFromColumns();
-
-    $("metricsBlock").style.display = "block";
-    $("scenarioBlock").style.display = "block";
+  function tryApplyMapping(){
+    const missing = REQUIRED_FIELDS.filter(f => !state.mapping[f]);
+    if(missing.length){
+      $("mappedSummary").style.display = "none";
+      $("mappingWrap").style.display = "block";
+      $("controlsCard").style.display = "none";
+      $("tierSummary").style.display = "none";
+      $("resultsCard").style.display = "none";
+      $("emptyState").style.display = "flex";
+      $("exportBtn").disabled = true;
+      return;
+    }
+    buildParsedRows();
+    $("mappedSummary").style.display = "flex";
+    $("mappingWrap").style.display = "none";
     $("emptyState").style.display = "none";
-    $("resultsWrap").style.display = "block";
+    $("controlsCard").style.display = "block";
+    $("resultsCard").style.display = "block";
     $("exportBtn").disabled = false;
-
-    renderScenarioList();
-    renderScenarioSelect();
+    populateAcctTypeFilter();
+    renderWeights();
+    renderScenarioChips();
     recompute();
   }
 
-  function buildMetricsFromColumns(){
-    const numericCols = state.headers.filter(h => h !== state.idColumn && isNumericColumn(h));
-    const existing = {};
-    state.metrics.forEach(m => existing[m.name] = m);
-    state.metrics = numericCols.map(h => existing[h] || {name:h, included:true, weight:10, direction:1});
-    renderMetrics();
-  }
-
-  function renderMetrics(){
-    const list = $("metricsList");
-    list.innerHTML = "";
-    state.metrics.forEach((m, idx) => {
-      const row = document.createElement("div");
-      row.className = "metric-row";
-      row.innerHTML = `
-        <div class="top">
-          <label><input type="checkbox" ${m.included?"checked":""} data-act="include" data-idx="${idx}"> ${escapeHtml(m.name)}</label>
-          <div class="dir-toggle" data-idx="${idx}">
-            <span data-dir="1" class="${m.direction===1?"active":""}" title="Higher values score better">▲ high</span>
-            <span data-dir="-1" class="${m.direction===-1?"active":""}" title="Lower values score better">▼ low</span>
-          </div>
-        </div>
-        <div class="controls">
-          <input type="range" min="0" max="100" value="${m.weight}" style="--pct:${m.weight}" data-act="weight" data-idx="${idx}">
-          <input type="number" class="wnum" min="0" max="100" value="${m.weight}" data-act="weightnum" data-idx="${idx}">
-        </div>`;
-      list.appendChild(row);
-    });
-    $("metricCount").textContent = state.metrics.filter(m=>m.included).length;
-
-    list.querySelectorAll('[data-act="include"]').forEach(el => el.addEventListener("change", e=>{
-      state.metrics[+e.target.dataset.idx].included = e.target.checked;
-      $("metricCount").textContent = state.metrics.filter(m=>m.included).length;
-      recompute();
-    }));
-    list.querySelectorAll('.dir-toggle').forEach(el => el.addEventListener("click", e=>{
-      const span = e.target.closest("span"); if(!span) return;
-      const idx = +el.dataset.idx;
-      state.metrics[idx].direction = +span.dataset.dir;
-      renderMetrics(); recompute();
-    }));
-    list.querySelectorAll('[data-act="weight"]').forEach(el => el.addEventListener("input", e=>{
-      const idx = +e.target.dataset.idx, val = +e.target.value;
-      state.metrics[idx].weight = val;
-      e.target.style.setProperty("--pct", val);
-      list.querySelector(`[data-act="weightnum"][data-idx="${idx}"]`).value = val;
-      updateWeightSum(); recompute();
-    }));
-    list.querySelectorAll('[data-act="weightnum"]').forEach(el => el.addEventListener("input", e=>{
-      const idx = +e.target.dataset.idx;
-      let val = Math.max(0, Math.min(100, +e.target.value || 0));
-      state.metrics[idx].weight = val;
-      const rangeEl = list.querySelector(`[data-act="weight"][data-idx="${idx}"]`);
-      rangeEl.value = val;
-      rangeEl.style.setProperty("--pct", val);
-      updateWeightSum(); recompute();
-    }));
-    updateWeightSum();
-  }
-
-  function updateWeightSum(){
-    const sum = state.metrics.filter(m=>m.included).reduce((s,m)=>s+m.weight,0);
-    const el = $("weightSum");
-    el.textContent = "Total weight: " + sum + (sum===0 ? " — add at least one weight" : " (auto-normalized to 100%)");
-    el.classList.toggle("warn", sum===0);
-  }
-
-  $("equalizeBtn").addEventListener("click", () => {
-    const included = state.metrics.filter(m=>m.included);
-    if(!included.length) return;
-    const w = Math.round(100/included.length);
-    included.forEach(m => m.weight = w);
-    renderMetrics(); recompute();
+  $("editMappingBtn").addEventListener("click", () => {
+    $("mappedSummary").style.display = "none";
+    $("mappingWrap").style.display = "block";
   });
 
-  // ---------- ranking engine ----------
+  function headerIndex(name){ return state.headers.indexOf(name); }
+
+  function buildParsedRows(){
+    const idx = {};
+    Object.keys(state.mapping).forEach(f => { if(state.mapping[f]) idx[f] = headerIndex(state.mapping[f]); });
+    const out = [];
+    for(const r of state.rawRows){
+      const monthRaw = r[idx.month];
+      const monthInfo = normalizeMonth(monthRaw);
+      if(!monthInfo) continue;
+      const custId = r[idx.custId];
+      if(custId === null || custId === "") continue;
+      out.push({
+        custId: String(custId),
+        custName: idx.custName!==undefined && r[idx.custName] ? String(r[idx.custName]) : String(custId),
+        acctType: idx.acctType!==undefined && r[idx.acctType] !== null ? String(r[idx.acctType]) : "",
+        monthKey: monthInfo.key,
+        drops: toNum(r[idx.drops]) || 0,
+        shipQty: toNum(r[idx.shipQty]) || 0,
+        caseEq: toNum(r[idx.caseEq]) || 0,
+        sls: toNum(r[idx.sls]) || 0
+      });
+    }
+    state.parsedRows = out;
+  }
+
+  function normalizeMonth(raw){
+    if(raw === null || raw === undefined || raw === "") return null;
+    if(typeof raw === "number"){
+      if(raw >= 190001 && raw <= 999912 && (raw % 100) >= 1 && (raw % 100) <= 12){
+        return {key: raw};
+      }
+      // Excel serial date number
+      const d = XLSX.SSF.parse_date_code(raw);
+      if(d && d.y) return {key: d.y*100 + d.m};
+      return {key: raw};
+    }
+    if(raw instanceof Date){
+      return {key: raw.getFullYear()*100 + (raw.getMonth()+1)};
+    }
+    const s = String(raw).trim();
+    let m = s.match(/^(\d{4})[-\/](\d{1,2})$/);
+    if(m) return {key: +m[1]*100 + +m[2]};
+    m = s.match(/^(\d{1,2})[-\/](\d{4})$/);
+    if(m) return {key: +m[2]*100 + +m[1]};
+    const parsed = new Date(s);
+    if(!isNaN(parsed.getTime())) return {key: parsed.getFullYear()*100 + (parsed.getMonth()+1)};
+    return {key: s};
+  }
+
+  function monthLabel(key){
+    if(typeof key === "number" && key >= 190001 && key <= 999912){
+      return Math.floor(key/100) + "-" + String(key%100).padStart(2,"0");
+    }
+    return String(key);
+  }
+
   function toNum(v){
-    if(v === null || v === "" || v === undefined) return null;
+    if(v === null || v === undefined || v === "") return null;
     const n = typeof v === "number" ? v : parseFloat(v);
     return isNaN(n) ? null : n;
   }
 
-  function computeRankings(){
-    const active = state.metrics.filter(m => m.included && m.weight > 0);
-    const totalWeight = active.reduce((s,m)=>s+m.weight,0);
-
-    const stats = {};
-    active.forEach(m => {
-      const vals = state.rows.map(r => toNum(r[m.name])).filter(v => v !== null);
-      stats[m.name] = {min: Math.min(...vals), max: Math.max(...vals)};
-    });
-
-    const results = state.rows.map(r => {
-      let score = 0;
-      const contributions = {};
-      active.forEach(m => {
-        const raw = toNum(r[m.name]);
-        const {min, max} = stats[m.name];
-        let norm;
-        if(raw === null) norm = 0;
-        else if(max === min) norm = 1;
-        else norm = m.direction === 1 ? (raw-min)/(max-min) : (max-raw)/(max-min);
-        const contribution = totalWeight > 0 ? (m.weight/totalWeight) * norm : 0;
-        contributions[m.name] = {raw, norm, contribution};
-        score += contribution;
-      });
-      return {customer: r[state.idColumn], score, contributions, raw: r};
-    });
-
-    results.sort((a,b) => b.score - a.score);
-
-    // dense rank
-    let rank = 0, lastScore = null;
-    results.forEach(res => {
-      const rounded = Math.round(res.score * 1e6) / 1e6;
-      if(lastScore === null || rounded !== lastScore){ rank++; lastScore = rounded; }
-      res.rank = rank;
-    });
-
-    return {results, activeMetrics: active};
+  function populateAcctTypeFilter(){
+    const types = Array.from(new Set(state.parsedRows.map(r => r.acctType).filter(t => t !== ""))).sort();
+    state.acctTypeOptions = types;
+    const sel = $("acctTypeFilter");
+    sel.innerHTML = `<option value="">All account types</option>` + types.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+    sel.value = state.acctTypeFilter;
+    sel.onchange = () => { state.acctTypeFilter = sel.value; recompute(); };
   }
 
+  // ---------- period toggle ----------
+  $("periodToggle").querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => {
+    state.mode = btn.dataset.mode;
+    $("periodToggle").querySelectorAll("button").forEach(b => b.classList.toggle("active", b===btn));
+    recompute();
+  }));
+  function updatePeriodExplain(){
+    $("periodExplain").textContent = state.mode === "lifetime"
+      ? "Averages each metric over every month a customer has ever been active in this file."
+      : "Averages each metric over the months a customer was active within the most recent 6 months present in the data.";
+  }
+
+  // ---------- weights ----------
+  function renderWeights(){
+    const grid = $("weightsGrid");
+    grid.innerHTML = METRICS.map(m => `
+      <div class="weight-card">
+        <div class="top"><strong>${m.label}</strong></div>
+        <div class="controls">
+          <input type="range" min="0" max="100" value="${state.weights[m.key]}" style="--pct:${state.weights[m.key]}" data-key="${m.key}" data-act="w">
+          <input type="number" class="wnum" min="0" max="100" value="${state.weights[m.key]}" data-key="${m.key}" data-act="wnum">
+        </div>
+      </div>`).join("");
+    grid.querySelectorAll('[data-act="w"]').forEach(el => el.addEventListener("input", e => {
+      const key = e.target.dataset.key, val = +e.target.value;
+      state.weights[key] = val;
+      e.target.style.setProperty("--pct", val);
+      grid.querySelector(`[data-act="wnum"][data-key="${key}"]`).value = val;
+      updateWeightSum(); rescore();
+    }));
+    grid.querySelectorAll('[data-act="wnum"]').forEach(el => el.addEventListener("input", e => {
+      const key = e.target.dataset.key;
+      let val = Math.max(0, Math.min(100, +e.target.value || 0));
+      state.weights[key] = val;
+      const range = grid.querySelector(`[data-act="w"][data-key="${key}"]`);
+      range.value = val; range.style.setProperty("--pct", val);
+      updateWeightSum(); rescore();
+    }));
+    updateWeightSum();
+  }
+  function updateWeightSum(){
+    const sum = METRICS.reduce((s,m)=>s+state.weights[m.key],0);
+    const el = $("weightSum");
+    el.textContent = "Total weight: " + sum + (sum===0 ? " — add at least one weight" : " (auto-normalized to 100%)");
+    el.classList.toggle("warn", sum===0);
+  }
+  $("equalizeBtn").addEventListener("click", () => {
+    METRICS.forEach(m => state.weights[m.key] = 25);
+    renderWeights(); rescore();
+  });
+
+  // ---------- thresholds ----------
+  function readThresholds(){
+    let top = Math.round(+$("topPctInput").value || 20);
+    let med = Math.round(+$("medPctInput").value || 50);
+    top = Math.max(1, Math.min(98, top));
+    med = Math.max(top+1, Math.min(99, med));
+    $("topPctInput").value = top; $("medPctInput").value = med;
+    state.topPct = top; state.medPct = med;
+    $("tierLabelsRow").innerHTML = `Top 1&ndash;${top}% &middot; Medium ${top+1}&ndash;${med}% &middot; Low ${med+1}&ndash;100%`;
+    $("segTop").style.flex = top;
+    $("segMed").style.flex = (med - top);
+    $("segLow").style.flex = (100 - med);
+  }
+  $("topPctInput").addEventListener("input", () => { readThresholds(); rescore(); });
+  $("medPctInput").addEventListener("input", () => { readThresholds(); rescore(); });
+
+  // ---------- aggregation & ranking ----------
   let lastComputation = null;
 
-  function recompute(){
-    if(!state.rows.length || !state.idColumn) return;
-    lastComputation = computeRankings();
+  // Groups raw rows into per-customer period aggregates. This is the expensive
+  // pass (scans every row) — only call it when the source data, account-type
+  // filter, or period mode changes. Weight/threshold changes only need rescore().
+  function aggregateData(){
+    let rows = state.parsedRows;
+    if(state.acctTypeFilter) rows = rows.filter(r => r.acctType === state.acctTypeFilter);
+
+    const allMonths = Array.from(new Set(rows.map(r => r.monthKey))).sort((a,b)=> a<b?-1:a>b?1:0);
+    const windowMonths = new Set(allMonths.slice(-6));
+
+    const byCust = new Map();
+    rows.forEach(r => {
+      if(!byCust.has(r.custId)) byCust.set(r.custId, []);
+      byCust.get(r.custId).push(r);
+    });
+
+    const aggregates = [];
+    byCust.forEach((custRows, custId) => {
+      const relevant = state.mode === "window6" ? custRows.filter(r => windowMonths.has(r.monthKey)) : custRows;
+      const activeMonths = new Set(relevant.map(r => r.monthKey));
+      if(activeMonths.size === 0) return;
+      const n = activeMonths.size;
+      const sums = {drops:0, shipQty:0, caseEq:0, sls:0};
+      relevant.forEach(r => { sums.drops+=r.drops; sums.shipQty+=r.shipQty; sums.caseEq+=r.caseEq; sums.sls+=r.sls; });
+      const latest = custRows.reduce((a,b) => b.monthKey > a.monthKey ? b : a);
+      aggregates.push({
+        custId, custName: latest.custName, acctType: latest.acctType,
+        activeMonths: n,
+        drops: sums.drops/n, shipQty: sums.shipQty/n, caseEq: sums.caseEq/n, sls: sums.sls/n
+      });
+    });
+
+    state.currentAggregates = aggregates;
+  }
+
+  // Cheap pass: normalizes/weights/ranks the already-aggregated per-customer
+  // rows. Safe to call on every weight or threshold tweak.
+  function rescore(){
+    if(!state.currentAggregates) return;
+    updatePeriodExplain();
+    readThresholds();
+    state.page = 0;
+    lastComputation = computeTiers(state.currentAggregates);
+    renderTierSummary(lastComputation);
     renderTable(lastComputation);
   }
 
-  // ---------- table rendering ----------
-  function renderTable(comp){
-    const {results, activeMetrics} = comp;
-    const head = $("tableHead");
-    head.innerHTML = `<th data-key="rank">Rank</th><th data-key="customer">Customer</th>` +
-      activeMetrics.map(m=>`<th data-key="m:${escapeHtml(m.name)}">${escapeHtml(m.name)}</th>`).join("") +
-      `<th data-key="score">Score</th>`;
+  function recompute(){
+    if(!state.parsedRows.length) return;
+    aggregateData();
+    rescore();
+  }
 
+  function computeTiers(aggregates){
+    const activeMetrics = METRICS.filter(m => state.weights[m.key] > 0);
+    const totalWeight = activeMetrics.reduce((s,m)=>s+state.weights[m.key],0);
+
+    const stats = {};
+    METRICS.forEach(m => {
+      const vals = aggregates.map(a => a[m.key]);
+      stats[m.key] = vals.length ? {min: Math.min(...vals), max: Math.max(...vals)} : {min:0,max:0};
+    });
+
+    const scored = aggregates.map(a => {
+      let score = 0;
+      activeMetrics.forEach(m => {
+        const {min,max} = stats[m.key];
+        const norm = max === min ? 1 : (a[m.key]-min)/(max-min);
+        score += (state.weights[m.key]/totalWeight) * norm;
+      });
+      return Object.assign({score}, a);
+    });
+    scored.sort((a,b) => b.score - a.score);
+
+    let rank = 0, lastScore = null;
+    const total = scored.length;
+    scored.forEach((r, i) => {
+      const rounded = Math.round(r.score*1e6)/1e6;
+      if(lastScore === null || rounded !== lastScore){ rank++; lastScore = rounded; }
+      r.rank = rank;
+      const percentile = ((i+1)/total)*100;
+      r.percentile = percentile;
+      r.tier = percentile <= state.topPct ? "top" : percentile <= state.medPct ? "med" : "low";
+    });
+
+    return {rows: scored, activeMetrics, total};
+  }
+
+  // ---------- tier summary ----------
+  function renderTierSummary(comp){
+    const tiers = [
+      {key:"top", label:"Top"}, {key:"med", label:"Medium"}, {key:"low", label:"Low"}
+    ];
+    const wrap = $("tierSummary");
+    wrap.style.display = "grid";
+    wrap.innerHTML = tiers.map(t => {
+      const rows = comp.rows.filter(r => r.tier === t.key);
+      const count = rows.length;
+      const sumCases = rows.reduce((s,r)=>s+r.caseEq,0);
+      const sumSales = rows.reduce((s,r)=>s+r.sls,0);
+      const sumDrops = rows.reduce((s,r)=>s+r.drops,0);
+      const avgCases = count ? sumCases/count : 0;
+      const avgSales = count ? sumSales/count : 0;
+      const casesPerDrop = sumDrops > 0 ? sumCases/sumDrops : 0;
+      const salesPerDrop = sumDrops > 0 ? sumSales/sumDrops : 0;
+      return `<div class="tier-card ${t.key}">
+        <div class="tier-head">
+          <span class="tier-name"><span class="tier-dot"></span>${t.label}</span>
+          <span class="count">${count} customer${count===1?"":"s"}</span>
+        </div>
+        <div class="tier-metrics">
+          <div class="tier-metric"><label>Avg Cases</label><div class="val">${formatNum(avgCases)}</div></div>
+          <div class="tier-metric"><label>Avg Sales</label><div class="val">${formatCurrency(avgSales)}</div></div>
+          <div class="tier-metric"><label>Cases / Drop</label><div class="val">${formatNum(casesPerDrop)}</div></div>
+          <div class="tier-metric"><label>Sales / Drop</label><div class="val">${formatCurrency(salesPerDrop)}</div></div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  // ---------- table ----------
+  const PAGE_SIZE = 100;
+
+  function renderTable(comp){
+    const head = $("tableHead");
+    head.innerHTML = `<th data-key="rank">Rank</th><th data-key="tier">Tier</th><th data-key="custName">Customer</th>` +
+      `<th data-key="acctType">Account Type</th>` +
+      METRICS.map(m=>`<th data-key="${m.key}">${m.label}</th>`).join("") +
+      `<th data-key="score">Score</th>`;
     head.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
       const key = th.dataset.key;
       state.sortDir = (state.sortKey === key) ? -state.sortDir : 1;
       state.sortKey = key;
+      state.page = 0;
       renderTable(comp);
     }));
 
-    let rows = results.slice();
+    let rows = comp.rows;
     if(state.searchTerm){
       const t = state.searchTerm.toLowerCase();
-      rows = rows.filter(r => String(r.customer).toLowerCase().includes(t));
+      rows = rows.filter(r => r.custName.toLowerCase().includes(t) || r.custId.toLowerCase().includes(t));
     }
-    rows.sort((a,b) => {
-      let av, bv;
-      if(state.sortKey === "rank"){ av=a.rank; bv=b.rank; }
-      else if(state.sortKey === "customer"){ av=String(a.customer); bv=String(b.customer); }
-      else if(state.sortKey === "score"){ av=a.score; bv=b.score; }
-      else if(state.sortKey.startsWith("m:")){
-        const name = state.sortKey.slice(2);
-        av = a.contributions[name] ? a.contributions[name].raw : null;
-        bv = b.contributions[name] ? b.contributions[name].raw : null;
-      }
-      if(av === null) av = -Infinity; if(bv === null) bv = -Infinity;
+    rows = rows.slice().sort((a,b) => {
+      let av = a[state.sortKey], bv = b[state.sortKey];
+      if(typeof av === "string") av = av.toLowerCase();
+      if(typeof bv === "string") bv = bv.toLowerCase();
       if(av < bv) return -1*state.sortDir;
       if(av > bv) return 1*state.sortDir;
       return 0;
     });
 
-    const body = $("tableBody");
-    body.innerHTML = rows.map(r => {
-      const cells = activeMetrics.map(m => {
-        const c = r.contributions[m.name];
-        const rawDisplay = c.raw === null ? "—" : formatNum(c.raw);
-        return `<td title="normalized ${(c.norm*100).toFixed(0)}% • contributes ${(c.contribution*100).toFixed(1)} pts">${rawDisplay}</td>`;
-      }).join("");
-      const medalClass = r.rank <= 3 ? " medal-" + r.rank : "";
-      return `<tr>
-        <td><span class="rank-badge${medalClass}">#${r.rank}</span></td>
-        <td>${escapeHtml(String(r.customer ?? "—"))}</td>
-        ${cells}
-        <td><strong>${(r.score*100).toFixed(1)}</strong></td>
-      </tr>`;
-    }).join("");
+    const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    state.page = Math.max(0, Math.min(state.page, totalPages-1));
+    const start = state.page * PAGE_SIZE;
+    const pageRows = rows.slice(start, start + PAGE_SIZE);
 
-    $("rowCount").textContent = rows.length + " customer" + (rows.length===1?"":"s") +
-      (activeMetrics.length ? " · ranked on " + activeMetrics.length + " metric" + (activeMetrics.length===1?"":"s") : " · select at least one metric");
+    const body = $("tableBody");
+    body.innerHTML = pageRows.map(r => `<tr>
+      <td><span class="rank-badge">#${r.rank}</span></td>
+      <td><span class="tier-pill ${r.tier}">${r.tier==="top"?"Top":r.tier==="med"?"Medium":"Low"}</span></td>
+      <td class="cust-name">${escapeHtml(r.custName)}</td>
+      <td>${escapeHtml(r.acctType || "—")}</td>
+      <td>${formatNum(r.drops)}</td>
+      <td>${formatNum(r.shipQty)}</td>
+      <td>${formatNum(r.caseEq)}</td>
+      <td>${formatCurrency(r.sls)}</td>
+      <td><strong>${(r.score*100).toFixed(1)}</strong></td>
+    </tr>`).join("");
+
+    $("rowCount").textContent = rows.length + " of " + comp.total + " customer" + (comp.total===1?"":"s") +
+      (state.acctTypeFilter ? " · account type: " + state.acctTypeFilter : "") +
+      " · " + (state.mode==="lifetime" ? "monthly average (full history)" : "6-month total (avg of active months)");
+
+    const pager = $("pager");
+    if(rows.length <= PAGE_SIZE){
+      pager.innerHTML = "";
+    }else{
+      pager.innerHTML = `
+        <span>Showing ${start+1}&ndash;${Math.min(start+PAGE_SIZE, rows.length)} of ${rows.length}</span>
+        <button class="secondary" id="pagerPrev" ${state.page===0?"disabled":""}>&larr; Prev</button>
+        <span>Page ${state.page+1} of ${totalPages}</span>
+        <button class="secondary" id="pagerNext" ${state.page>=totalPages-1?"disabled":""}>Next &rarr;</button>`;
+      const prevBtn = $("pagerPrev"), nextBtn = $("pagerNext");
+      if(prevBtn) prevBtn.addEventListener("click", () => { state.page--; renderTable(comp); });
+      if(nextBtn) nextBtn.addEventListener("click", () => { state.page++; renderTable(comp); });
+    }
   }
 
   $("searchBox").addEventListener("input", e => {
     state.searchTerm = e.target.value;
+    state.page = 0;
     if(lastComputation) renderTable(lastComputation);
   });
 
   // ---------- export ----------
   $("exportBtn").addEventListener("click", async () => {
     if(!lastComputation) return;
-    const {results, activeMetrics} = lastComputation;
-    const header = ["Rank","Customer", ...activeMetrics.map(m=>m.name), "Score"];
+    const header = ["Rank","Tier","Customer","Account Type", ...METRICS.map(m=>m.label), "Score"];
     const lines = [header.join(",")];
-    results.forEach(r => {
-      const row = [r.rank, csvEscape(r.customer),
-        ...activeMetrics.map(m => r.contributions[m.name].raw ?? ""),
-        (r.score*100).toFixed(2)];
+    lastComputation.rows.forEach(r => {
+      const row = [r.rank, r.tier, csvEscape(r.custName), csvEscape(r.acctType),
+        ...METRICS.map(m => r[m.key].toFixed(2)), (r.score*100).toFixed(2)];
       lines.push(row.join(","));
     });
     const csvText = lines.join("\n");
-    const filename = "customer_ranking_" + (state.activeScenario || "results") + ".csv";
+    const filename = "customer_tiers_" + state.mode + ".csv";
 
     if(window.claude && window.claude.use){
       try{
         const downloads = await window.claude.use("downloads");
         if(downloads){ await downloads.save({filename, data: csvText}); return; }
-      }catch(e){ /* declined, rate-limited, or unavailable — fall back below */ }
+      }catch(e){ /* fall back below */ }
     }
-
     const blob = new Blob([csvText], {type:"text/csv"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -585,68 +860,37 @@
   $("saveScenarioBtn").addEventListener("click", () => {
     const name = $("scenarioNameInput").value.trim();
     if(!name) return;
-    state.scenarios[name] = {
-      idColumn: state.idColumn,
-      metrics: state.metrics.map(m => ({...m}))
-    };
-    state.activeScenario = name;
+    state.scenarios[name] = {weights: Object.assign({}, state.weights), topPct: state.topPct, medPct: state.medPct, mode: state.mode};
     persistScenarios();
     $("scenarioNameInput").value = "";
-    renderScenarioList();
-    renderScenarioSelect();
+    renderScenarioChips();
   });
-
   function applyScenario(name){
     const sc = state.scenarios[name];
     if(!sc) return;
-    state.activeScenario = name;
-    if(state.headers.includes(sc.idColumn)){
-      state.idColumn = sc.idColumn;
-      $("idColumnSelect").value = sc.idColumn;
-    }
-    const byName = {}; sc.metrics.forEach(m => byName[m.name]=m);
-    state.metrics.forEach(m => {
-      if(byName[m.name]){
-        m.included = byName[m.name].included;
-        m.weight = byName[m.name].weight;
-        m.direction = byName[m.name].direction;
-      }
-    });
-    renderMetrics();
-    renderScenarioList();
-    renderScenarioSelect();
+    state.weights = Object.assign({}, sc.weights);
+    state.topPct = sc.topPct; state.medPct = sc.medPct; state.mode = sc.mode;
+    $("topPctInput").value = sc.topPct; $("medPctInput").value = sc.medPct;
+    $("periodToggle").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.mode===sc.mode));
+    renderWeights();
+    renderScenarioChips(name);
     recompute();
   }
-
-  function renderScenarioList(){
-    const wrap = $("scenarioList");
+  function renderScenarioChips(activeName){
+    const wrap = $("scenarioChips");
     const names = Object.keys(state.scenarios);
-    if(!names.length){ wrap.innerHTML = `<div class="hint">No scenarios saved yet.</div>`; return; }
-    wrap.innerHTML = names.map(name => `
-      <div class="scenario-item ${name===state.activeScenario?"active":""}">
-        <span class="name" data-name="${escapeHtml(name)}">${escapeHtml(name)}</span>
-        <div class="btns">
-          <button class="ghost" data-act="apply" data-name="${escapeHtml(name)}">Apply</button>
-          <button class="ghost" data-act="delete" data-name="${escapeHtml(name)}">✕</button>
-        </div>
-      </div>`).join("");
-    wrap.querySelectorAll('[data-act="apply"]').forEach(b => b.addEventListener("click", () => applyScenario(b.dataset.name)));
-    wrap.querySelectorAll('.name').forEach(b => b.addEventListener("click", () => applyScenario(b.dataset.name)));
-    wrap.querySelectorAll('[data-act="delete"]').forEach(b => b.addEventListener("click", () => {
-      delete state.scenarios[b.dataset.name];
-      if(state.activeScenario === b.dataset.name) state.activeScenario = null;
+    wrap.innerHTML = names.map(n => `
+      <span class="scenario-chip ${n===activeName?"active":""}" data-name="${escapeHtml(n)}">
+        <span class="apply">${escapeHtml(n)}</span>
+        <button data-del="${escapeHtml(n)}">&times;</button>
+      </span>`).join("");
+    wrap.querySelectorAll(".apply").forEach(el => el.addEventListener("click", () => applyScenario(el.parentElement.dataset.name)));
+    wrap.querySelectorAll("[data-del]").forEach(el => el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      delete state.scenarios[el.dataset.del];
       persistScenarios();
-      renderScenarioList();
-      renderScenarioSelect();
+      renderScenarioChips();
     }));
-  }
-
-  function renderScenarioSelect(){
-    const sel = $("scenarioSelect");
-    const names = Object.keys(state.scenarios);
-    sel.innerHTML = `<option value="">— Select scenario —</option>` +
-      names.map(n=>`<option value="${escapeHtml(n)}" ${n===state.activeScenario?"selected":""}>${escapeHtml(n)}</option>`).join("");
-    sel.onchange = () => { if(sel.value) applyScenario(sel.value); };
   }
 
   // ---------- utils ----------
@@ -658,12 +902,16 @@
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
   }
   function formatNum(n){
-    if(typeof n !== "number") return n;
-    return Math.abs(n) >= 1000 ? n.toLocaleString(undefined,{maximumFractionDigits:1}) : n.toString();
+    if(typeof n !== "number" || isNaN(n)) return "—";
+    return n.toLocaleString(undefined,{maximumFractionDigits:1});
+  }
+  function formatCurrency(n){
+    if(typeof n !== "number" || isNaN(n)) return "—";
+    return "$" + n.toLocaleString(undefined,{maximumFractionDigits:0});
   }
 
-  loadScenariosFromStorage();
-  renderScenarioSelect();
+  loadScenarios();
+  readThresholds();
 })();
 </script>
 </body>

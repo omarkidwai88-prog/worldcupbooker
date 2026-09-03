@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Customer Tiering Dashboard</title>
+<title>Customer Segmentation Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -217,7 +217,7 @@
 
 <header>
   <div>
-    <h1>Customer Tiering Dashboard</h1>
+    <h1>Customer Segmentation Dashboard</h1>
     <div class="sub">Upload monthly activity, weight your metrics, and segment into Top / Medium / Low tiers</div>
   </div>
   <div class="header-actions">
@@ -268,6 +268,10 @@
         <div class="control-block">
           <label class="field">Account type</label>
           <select id="acctTypeFilter" style="min-width:170px;"></select>
+        </div>
+        <div class="control-block" id="buFilterBlock" style="display:none;">
+          <label class="field">Business unit</label>
+          <select id="buFilter" style="min-width:170px;"></select>
         </div>
         <div class="control-block" id="siteFilterBlock" style="display:none;">
           <label class="field">Site</label>
@@ -338,7 +342,10 @@
     <main style="display:flex;flex-direction:column;gap:16px;min-width:0;">
       <!-- ============ RANKING TAB ============ -->
       <div class="tab-panel active" id="tab-ranking">
-        <section class="tier-summary" id="tierSummary"></section>
+        <div>
+          <p class="section-title" style="margin-bottom:10px;">Customer Summary &middot; <span id="summaryPeriodLabel"></span></p>
+          <section class="tier-summary" id="tierSummary"></section>
+        </div>
 
         <section class="card" id="resultsCard">
           <div class="toolbar">
@@ -402,12 +409,12 @@
     {key:"caseEq",  label:"Cases"},
     {key:"sls",     label:"Sales"}
   ];
-  const LEVEL_LABELS = {global:"Customer", site:"Site", region:"Region"};
   const FIELD_ALIASES = {
     custId:   ["sitecustid","custid","customerid","acctid","accountid","customernumber","custnum"],
     custName: ["custnm","customername","custname"],
     month:    ["fiscmoid","fiscalmonth","fiscmo","period","month","yyyymm","monthid","fiscalperiod","date"],
     acctType: ["custaccttyp","accounttype","accttype","customertype","channel","custtype"],
+    bu:       ["bu","businessunit","businessunitcode","div","division","businessline","segment"],
     site:     ["sitenm","site","sitename","branch","branchname","location","depot"],
     region:   ["rgn","region","regionname","territory","area"],
     drops:    ["drops","dropcount","stops","stopcount"],
@@ -417,11 +424,11 @@
   };
   const FIELD_LABELS = {
     custId:"Customer ID", custName:"Customer Name", month:"Month / Period", acctType:"Account Type",
-    site:"Site", region:"Region",
+    bu:"Business Unit", site:"Site", region:"Region",
     drops:"Drops", shipQty:"Ship Qty", caseEq:"Cases", sls:"Sales"
   };
   const REQUIRED_FIELDS = ["custId","month","drops","shipQty","caseEq","sls"];
-  const OPTIONAL_FIELDS = ["custName","acctType","site","region"];
+  const OPTIONAL_FIELDS = ["custName","acctType","bu","site","region"];
   const MAX_SCENARIOS = 5;
 
   const state = {
@@ -429,14 +436,14 @@
     mapping: {},
     parsedRows: [],
     acctTypeOptions: [],
-    hasSite: false, hasRegion: false,
+    hasSite: false, hasRegion: false, hasBu: false,
     mode: "lifetime",              // 'lifetime' | 'window6'
     cohortLevel: "global",         // 'global' | 'site' | 'region' -- ranking comparison scope
     breakdownGroupBy: "site",      // 'site' | 'region' -- Site Breakdown tab's own grouping
     activeTab: "ranking",
     weights: {drops:25, shipQty:25, caseEq:25, sls:25},
     topPct: 20, medPct: 50,
-    acctTypeFilter: "", siteFilter: "",
+    acctTypeFilter: "", buFilter: "", siteFilter: "",
     scenarios: {},
     customerAggregates: null,
     filteredRows: [],
@@ -517,26 +524,28 @@
   }
 
   function loadSampleData(){
-    const headers = ["fisc_mo_id","cust_acct_typ","site_nm","rgn","site_cust_id","cust_nm","drops","ship_qty","case_eq","sls"];
+    const headers = ["fisc_mo_id","bu","cust_acct_typ","site_nm","rgn","site_cust_id","cust_nm","drops","ship_qty","case_eq","sls"];
     const acctTypes = ["TRS","TRP","OTH","WHS"];
     const sites = [
-      {site:"Buckhead Atlanta", region:"Southeast"},
-      {site:"FP-Dallas", region:"Texas"},
-      {site:"FP-Denver", region:"Rockies"},
-      {site:"Newport South California", region:"West"}
+      {site:"Buckhead Atlanta", region:"Southeast", bu:"B|N"},
+      {site:"FP-Dallas", region:"Texas", bu:"FP"},
+      {site:"FP-Denver", region:"Rockies", bu:"FP"},
+      {site:"Newport South California", region:"West", bu:"B|N"}
     ];
     const names = ["5th and Taylor","Brydens Market","Firefly","Chico Cantina","Goin Coastal Seafood","Union Tavern",
       "The Alden","Cobalt Restaurant","Magnolia House","Peach Street Diner","Ironwood Grill","Bayou Kitchen",
       "Harbor Point Cafe","North End Bistro","Copper Still BBQ","Lakeside Provisions","Elm & Vine","The Pantry Co",
       "Saltwater Social","Miller Street Market","Riverside Deli","Sunset Grill","Maple & Main","The Local Table",
       "Ocean Breeze Seafood","Prairie Kitchen","Stonebridge Tavern","Foothill Provisions","Redbrick Diner","Willow Creek Cafe"];
-    const months = [202609,202610,202611,202612,202701,202702];
+    // 12 months so "Monthly Average" (full history) and "6-Month Total" (trailing
+    // window) can genuinely differ, unlike a file with 6 or fewer months on file.
+    const months = [202509,202510,202511,202512,202601,202602,202603,202604,202605,202606,202607,202608];
     const rows = [];
     names.forEach((name, i) => {
       const acct = acctTypes[i % acctTypes.length];
       const loc = sites[i % sites.length];
       const base = 300 + Math.random()*2200;
-      const activeSpan = 3 + Math.floor(Math.random()*4);
+      const activeSpan = 4 + Math.floor(Math.random()*9); // 4-12 active months
       const activeMonths = months.slice(months.length - activeSpan);
       activeMonths.forEach(m => {
         const wobble = 0.7 + Math.random()*0.6;
@@ -544,12 +553,12 @@
         const caseEq = Math.max(1, Math.round((20 + Math.random()*90) * wobble));
         const shipQty = +(caseEq * (12 + Math.random()*8)).toFixed(2);
         const sls = +(base * wobble * (1 + Math.random()*0.3)).toFixed(2);
-        rows.push([m, acct, loc.site, loc.region, "SMP-"+(100+i), name, drops, shipQty, caseEq, sls]);
+        rows.push([m, loc.bu, acct, loc.site, loc.region, "SMP-"+(100+i), name, drops, shipQty, caseEq, sls]);
       });
     });
     state.headers = headers;
     state.rawRows = rows;
-    $("fileStatus").textContent = "Sample dataset — " + names.length + " customers, 4 sites, 6 fiscal months.";
+    $("fileStatus").textContent = "Sample dataset — " + names.length + " customers, 4 sites, 12 fiscal months.";
     $("sheetPicker").style.display = "none";
     autoDetectMapping();
     renderMappingGrid();
@@ -606,6 +615,7 @@
     buildParsedRows();
     state.hasSite = !!state.mapping.site;
     state.hasRegion = !!state.mapping.region;
+    state.hasBu = !!state.mapping.bu;
     $("mappedSummary").style.display = "flex";
     $("mappingWrap").style.display = "none";
     $("emptyState").style.display = "none";
@@ -613,6 +623,7 @@
     $("tabs").style.display = "flex";
     $("layoutGrid").style.display = "grid";
     populateAcctTypeFilter();
+    populateBuFilter();
     populateSiteFilter();
     setupRankLevelToggle();
     setupBreakdownGroupBy();
@@ -641,6 +652,7 @@
         custId: String(custId),
         custName: idx.custName!==undefined && r[idx.custName] ? String(r[idx.custName]) : String(custId),
         acctType: idx.acctType!==undefined && r[idx.acctType] !== null ? String(r[idx.acctType]) : "",
+        bu: idx.bu!==undefined && r[idx.bu] !== null ? String(r[idx.bu]) : "",
         site: idx.site!==undefined && r[idx.site] ? String(r[idx.site]) : "",
         region: idx.region!==undefined && r[idx.region] ? String(r[idx.region]) : "",
         monthKey: monthInfo.key,
@@ -687,6 +699,17 @@
     sel.onchange = () => { state.acctTypeFilter = sel.value; recompute(); };
   }
 
+  function populateBuFilter(){
+    const block = $("buFilterBlock");
+    if(!state.hasBu){ block.style.display = "none"; state.buFilter = ""; return; }
+    block.style.display = "flex";
+    const units = Array.from(new Set(state.parsedRows.map(r => r.bu).filter(t => t !== ""))).sort();
+    const sel = $("buFilter");
+    sel.innerHTML = `<option value="">All business units</option>` + units.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
+    sel.value = state.buFilter;
+    sel.onchange = () => { state.buFilter = sel.value; recompute(); };
+  }
+
   function populateSiteFilter(){
     const block = $("siteFilterBlock");
     if(!state.hasSite){ block.style.display = "none"; state.siteFilter = ""; return; }
@@ -710,7 +733,7 @@
       if(btn.disabled) return;
       state.cohortLevel = btn.dataset.level;
       wrap.querySelectorAll("button").forEach(b => b.classList.toggle("active", b===btn));
-      state.sortKey = state.cohortLevel === "global" ? "rank" : "cohort";
+      state.sortKey = state.cohortLevel === "global" ? "rank" : state.cohortLevel;
       state.sortDir = 1;
       updateRankLevelExplain();
       rescore();
@@ -814,9 +837,10 @@
   // label — see aggregateCustomers), so it filters AFTER aggregation, against that
   // same label. Filtering rows by site directly would silently diverge from the
   // Site cohort grouping for any customer whose site tag changed month to month.
-  function getAcctFilteredRows(){
+  function getRowFilteredRows(){
     let rows = state.parsedRows;
     if(state.acctTypeFilter) rows = rows.filter(r => r.acctType === state.acctTypeFilter);
+    if(state.buFilter) rows = rows.filter(r => r.bu === state.buFilter);
     return rows;
   }
   function applySiteFilter(aggregates){
@@ -849,7 +873,7 @@
 
   // Expensive pass — only call when data, account-type filter, site filter, or mode changes.
   function aggregateData(){
-    state.filteredRows = getAcctFilteredRows();
+    state.filteredRows = getRowFilteredRows();
     state.customerAggregates = applySiteFilter(aggregateCustomers(state.filteredRows, state.mode));
   }
 
@@ -957,6 +981,7 @@
 
   // ---------- tier summary (pooled across cohorts) ----------
   function renderTierSummary(comp){
+    $("summaryPeriodLabel").textContent = state.mode === "lifetime" ? "Monthly Average" : "6-Month Total";
     const tiers = [{key:"top", label:"Top"}, {key:"med", label:"Medium"}, {key:"low", label:"Low"}];
     const stats = computeTierStats(comp.rows);
     const wrap = $("tierSummary");
@@ -984,7 +1009,8 @@
     const level = state.cohortLevel;
     const head = $("tableHead");
     let cols = [{key:"rank", label:"Rank"}, {key:"tier", label:"Tier"}, {key:"label", label:"Customer"}];
-    if(level !== "global") cols.push({key:"cohort", label: LEVEL_LABELS[level]});
+    if(state.hasSite) cols.push({key:"site", label:"Site"});
+    if(state.hasRegion) cols.push({key:"region", label:"Region"});
     cols.push({key:"acctType", label:"Account Type"});
     METRICS.forEach(m => cols.push({key:m.key, label:m.label}));
     cols.push({key:"score", label:"Score"});
@@ -1004,9 +1030,11 @@
       rows = rows.filter(r => r.label.toLowerCase().includes(t) || String(r.id).toLowerCase().includes(t));
     }
     rows = rows.slice().sort((a,b) => {
-      if(state.sortKey === "cohort"){
-        const ac = a.cohort || "", bc = b.cohort || "";
-        if(ac !== bc) return ac < bc ? -1*state.sortDir : 1*state.sortDir;
+      // Site/Region sorts group same-site/region rows together, using rank as a
+      // tiebreak — this is also the default view right after switching cohorts.
+      if(state.sortKey === "site" || state.sortKey === "region"){
+        const av = a[state.sortKey] || "", bv = b[state.sortKey] || "";
+        if(av !== bv) return av < bv ? -1*state.sortDir : 1*state.sortDir;
         return a.rank - b.rank;
       }
       let av = a[state.sortKey], bv = b[state.sortKey];
@@ -1027,7 +1055,8 @@
       <td><span class="rank-badge">#${r.rank}</span></td>
       <td><span class="tier-pill ${r.tier}">${r.tier==="top"?"Top":r.tier==="med"?"Medium":"Low"}</span></td>
       <td class="cust-name">${escapeHtml(r.label)}</td>
-      ${level !== "global" ? `<td>${escapeHtml(r.cohort)}</td>` : ""}
+      ${state.hasSite ? `<td>${escapeHtml(r.site || "—")}</td>` : ""}
+      ${state.hasRegion ? `<td>${escapeHtml(r.region || "—")}</td>` : ""}
       <td>${escapeHtml(r.acctType || "—")}</td>
       <td>${formatNum(r.drops)}</td>
       <td>${formatNum(r.shipQty)}</td>
@@ -1039,6 +1068,7 @@
     const cohortNote = level === "global" ? "" : ` · ranked within each ${level} (${comp.perCohort.length} ${level}${comp.perCohort.length===1?"":"s"})`;
     $("rowCount").textContent = rows.length + " of " + comp.total + " customer" + (comp.total===1?"":"s") +
       (state.acctTypeFilter ? " · account type: " + state.acctTypeFilter : "") +
+      (state.buFilter ? " · business unit: " + state.buFilter : "") +
       (state.siteFilter ? " · site: " + state.siteFilter : "") +
       " · " + (state.mode==="lifetime" ? "monthly average" : "6-month total") + cohortNote;
 
@@ -1087,27 +1117,32 @@
   $("exportCurrentBtn").addEventListener("click", async () => {
     if(!lastComputation) return;
     const level = state.cohortLevel;
-    const header = ["Rank","Tier","Customer", ...(level!=="global"?[LEVEL_LABELS[level]]:[]), "Account Type", ...METRICS.map(m=>m.label), "Score"];
+    const header = ["Rank","Tier","Customer",
+      ...(state.hasSite?["Site"]:[]), ...(state.hasRegion?["Region"]:[]),
+      "Account Type", ...METRICS.map(m=>m.label), "Score"];
     const lines = [header.join(",")];
+    const sortField = level === "global" ? null : level; // 'site' | 'region' | null
     const sorted = lastComputation.rows.slice().sort((a,b) => {
-      if(level === "global") return a.rank - b.rank;
-      const ac = a.cohort || "", bc = b.cohort || "";
-      if(ac !== bc) return ac < bc ? -1 : 1;
+      if(sortField){
+        const av = a[sortField] || "", bv = b[sortField] || "";
+        if(av !== bv) return av < bv ? -1 : 1;
+      }
       return a.rank - b.rank;
     });
     sorted.forEach(r => {
-      const row = [r.rank, r.tier, csvEscape(r.label), ...(level!=="global"?[csvEscape(r.cohort)]:[]), csvEscape(r.acctType),
-        ...METRICS.map(m => r[m.key].toFixed(2)), (r.score*100).toFixed(2)];
+      const row = [r.rank, r.tier, csvEscape(r.label),
+        ...(state.hasSite?[csvEscape(r.site)]:[]), ...(state.hasRegion?[csvEscape(r.region)]:[]),
+        csvEscape(r.acctType), ...METRICS.map(m => r[m.key].toFixed(2)), (r.score*100).toFixed(2)];
       lines.push(row.join(","));
     });
-    await downloadCsv("tiering_" + level + "_" + state.mode + ".csv", lines.join("\n"));
+    await downloadCsv("segmentation_" + level + "_" + state.mode + ".csv", lines.join("\n"));
   });
 
   // ---------- export: scenario comparison (always customer level) ----------
   $("exportScenariosBtn").addEventListener("click", async () => {
     const names = Object.keys(state.scenarios);
     if(!names.length) return;
-    const rows = getAcctFilteredRows();
+    const rows = getRowFilteredRows();
 
     const modeCache = {};
     function aggForMode(mode){

@@ -188,6 +188,8 @@
   th:hover{color:var(--ink);}
   td{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;}
   td.cust-name{font-family:var(--font-ui);font-weight:700;font-size:13px;}
+  td.yoy-pos{color:var(--good);font-weight:700;}
+  td.yoy-neg{color:var(--bad);font-weight:700;}
   tbody tr:hover{background:var(--surface-2);}
   .rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:22px;border-radius:6px;
     background:var(--surface-2);color:var(--muted);font-weight:700;font-size:11.5px;padding:0 6px;font-family:var(--font-mono);border:1px solid var(--border);}
@@ -404,11 +406,31 @@
   "use strict";
 
   const METRICS = [
-    {key:"drops",   label:"Drops"},
-    {key:"shipQty", label:"Ship Qty"},
-    {key:"caseEq",  label:"Cases"},
-    {key:"sls",     label:"Sales"}
+    {key:"drops",   label:"Drops",   format:"num"},
+    {key:"shipQty", label:"Ship Qty", format:"num"},
+    {key:"caseEq",  label:"Cases",   format:"num"},
+    {key:"sls",     label:"Sales",   format:"currency"},
+    {key:"salesPerDrop", label:"Sales/Drop", format:"currency"}
   ];
+  // salesPerDrop defaults to 0 (opt-in) so adding it doesn't change any existing
+  // scenario's score. Merge this over a saved scenario's weights so an older
+  // scenario missing a newer metric key gets a safe default instead of undefined.
+  const DEFAULT_WEIGHTS = {drops:25, shipQty:25, caseEq:25, sls:25, salesPerDrop:0};
+  // Generates likely "last year" column-name variants from a metric's base aliases
+  // (e.g. "drops" -> "dropsly", "lydrops", "drops_py", ...) for auto-detection;
+  // the manual mapping dropdown covers whatever this heuristic misses.
+  function lyAliasesFor(baseAliases){
+    const tags = ["ly","py","lastyear","prioryear","yearago"];
+    const out = [];
+    baseAliases.forEach(b => tags.forEach(t => { out.push(b+t); out.push(t+b); }));
+    return out;
+  }
+  const BASE_METRIC_ALIASES = {
+    drops:   ["drops","dropcount","stops","stopcount"],
+    shipQty: ["shipqty","shipquantity","shippedqty","shipqnty","units","unitshipped"],
+    caseEq:  ["caseeq","cases","caseequiv","caseequivalent","caseeqty"],
+    sls:     ["sls","sales","revenue","netsales","salesamt","salesamount"]
+  };
   const FIELD_ALIASES = {
     custId:   ["sitecustid","custid","customerid","acctid","accountid","customernumber","custnum"],
     custName: ["custnm","customername","custname"],
@@ -417,18 +439,30 @@
     bu:       ["bu","businessunit","businessunitcode","div","division","businessline","segment"],
     site:     ["sitenm","site","sitename","branch","branchname","location","depot"],
     region:   ["rgn","region","regionname","territory","area"],
-    drops:    ["drops","dropcount","stops","stopcount"],
-    shipQty:  ["shipqty","shipquantity","shippedqty","shipqnty","units","unitshipped"],
-    caseEq:   ["caseeq","cases","caseequiv","caseequivalent","caseeqty"],
-    sls:      ["sls","sales","revenue","netsales","salesamt","salesamount"]
+    drops:    BASE_METRIC_ALIASES.drops,
+    shipQty:  BASE_METRIC_ALIASES.shipQty,
+    caseEq:   BASE_METRIC_ALIASES.caseEq,
+    sls:      BASE_METRIC_ALIASES.sls,
+    dropsLY:   lyAliasesFor(BASE_METRIC_ALIASES.drops),
+    shipQtyLY: lyAliasesFor(BASE_METRIC_ALIASES.shipQty),
+    caseEqLY:  lyAliasesFor(BASE_METRIC_ALIASES.caseEq),
+    slsLY:     lyAliasesFor(BASE_METRIC_ALIASES.sls)
   };
   const FIELD_LABELS = {
     custId:"Customer ID", custName:"Customer Name", month:"Month / Period", acctType:"Account Type",
     bu:"Business Unit", site:"Site", region:"Region",
-    drops:"Drops", shipQty:"Ship Qty", caseEq:"Cases", sls:"Sales"
+    drops:"Drops", shipQty:"Ship Qty", caseEq:"Cases", sls:"Sales",
+    dropsLY:"Drops (LY)", shipQtyLY:"Ship Qty (LY)", caseEqLY:"Cases (LY)", slsLY:"Sales (LY)"
   };
   const REQUIRED_FIELDS = ["custId","month","drops","shipQty","caseEq","sls"];
-  const OPTIONAL_FIELDS = ["custName","acctType","bu","site","region"];
+  const OPTIONAL_FIELDS = ["custName","acctType","bu","site","region","dropsLY","shipQtyLY","caseEqLY","slsLY"];
+  const LY_OF = {drops:"dropsLY", shipQty:"shipQtyLY", caseEq:"caseEqLY", sls:"slsLY", salesPerDrop:"salesPerDropLY"};
+  function metricHasLY(key){
+    return key === "salesPerDrop" ? (state.hasLY.sls && state.hasLY.drops) : !!state.hasLY[key];
+  }
+  function yoyPct(ty, ly){
+    return (ly === null || ly === undefined || ly === 0) ? null : ((ty-ly)/ly)*100;
+  }
   const MAX_SCENARIOS = 5;
 
   const state = {
@@ -437,11 +471,12 @@
     parsedRows: [],
     acctTypeOptions: [],
     hasSite: false, hasRegion: false, hasBu: false,
+    hasLY: {drops:false, shipQty:false, caseEq:false, sls:false},
     mode: "lifetime",              // 'lifetime' | 'window6'
     cohortLevel: "global",         // 'global' | 'site' | 'region' -- ranking comparison scope
     breakdownGroupBy: "site",      // 'site' | 'region' -- Site Breakdown tab's own grouping
     activeTab: "ranking",
-    weights: {drops:25, shipQty:25, caseEq:25, sls:25},
+    weights: Object.assign({}, DEFAULT_WEIGHTS),
     topPct: 20, medPct: 50,
     acctTypeFilter: "", buFilter: "", siteFilter: "",
     scenarios: {},
@@ -524,7 +559,8 @@
   }
 
   function loadSampleData(){
-    const headers = ["fisc_mo_id","bu","cust_acct_typ","site_nm","rgn","site_cust_id","cust_nm","drops","ship_qty","case_eq","sls"];
+    const headers = ["fisc_mo_id","bu","cust_acct_typ","site_nm","rgn","site_cust_id","cust_nm",
+      "drops","ship_qty","case_eq","sls","drops_ly","ship_qty_ly","case_eq_ly","sls_ly"];
     const acctTypes = ["TRS","TRP","OTH","WHS"];
     const sites = [
       {site:"Buckhead Atlanta", region:"Southeast", bu:"B|N"},
@@ -547,18 +583,26 @@
       const base = 300 + Math.random()*2200;
       const activeSpan = 4 + Math.floor(Math.random()*9); // 4-12 active months
       const activeMonths = months.slice(months.length - activeSpan);
+      // Each customer gets its own YoY growth story (+/-30%) so LY/YoY% columns
+      // in the demo show a realistic spread instead of a uniform shift.
+      const yoyFactor = 0.7 + Math.random()*0.6;
       activeMonths.forEach(m => {
         const wobble = 0.7 + Math.random()*0.6;
         const drops = Math.max(1, Math.round((4 + Math.random()*14) * wobble));
         const caseEq = Math.max(1, Math.round((20 + Math.random()*90) * wobble));
         const shipQty = +(caseEq * (12 + Math.random()*8)).toFixed(2);
         const sls = +(base * wobble * (1 + Math.random()*0.3)).toFixed(2);
-        rows.push([m, loc.bu, acct, loc.site, loc.region, "SMP-"+(100+i), name, drops, shipQty, caseEq, sls]);
+        const dropsLY = Math.max(1, Math.round(drops / yoyFactor));
+        const caseEqLY = Math.max(1, Math.round(caseEq / yoyFactor));
+        const shipQtyLY = +(shipQty / yoyFactor).toFixed(2);
+        const slsLY = +(sls / yoyFactor).toFixed(2);
+        rows.push([m, loc.bu, acct, loc.site, loc.region, "SMP-"+(100+i), name,
+          drops, shipQty, caseEq, sls, dropsLY, shipQtyLY, caseEqLY, slsLY]);
       });
     });
     state.headers = headers;
     state.rawRows = rows;
-    $("fileStatus").textContent = "Sample dataset — " + names.length + " customers, 4 sites, 12 fiscal months.";
+    $("fileStatus").textContent = "Sample dataset — " + names.length + " customers, 4 sites, 12 fiscal months, with LY columns.";
     $("sheetPicker").style.display = "none";
     autoDetectMapping();
     renderMappingGrid();
@@ -572,11 +616,17 @@
   function autoDetectMapping(){
     const normed = state.headers.map(h => ({h, n: normalizeHeader(h)}));
     const mapping = {};
+    // A header claimed by one field (exact or fuzzy) is excluded from every
+    // later field's search — without this, a fuzzy substring match (e.g. "site"
+    // inside "site_cust_id") can steal a column already claimed exactly by an
+    // earlier field like custId.
+    const used = new Set();
     Object.keys(FIELD_ALIASES).forEach(field => {
       const aliases = FIELD_ALIASES[field];
-      let found = normed.find(x => aliases.includes(x.n));
-      if(!found) found = normed.find(x => aliases.some(a => x.n.includes(a)));
+      let found = normed.find(x => !used.has(x.h) && aliases.includes(x.n));
+      if(!found) found = normed.find(x => !used.has(x.h) && aliases.some(a => x.n.includes(a)));
       mapping[field] = found ? found.h : "";
+      if(found) used.add(found.h);
     });
     state.mapping = mapping;
   }
@@ -616,6 +666,10 @@
     state.hasSite = !!state.mapping.site;
     state.hasRegion = !!state.mapping.region;
     state.hasBu = !!state.mapping.bu;
+    state.hasLY = {
+      drops: !!state.mapping.dropsLY, shipQty: !!state.mapping.shipQtyLY,
+      caseEq: !!state.mapping.caseEqLY, sls: !!state.mapping.slsLY
+    };
     $("mappedSummary").style.display = "flex";
     $("mappingWrap").style.display = "none";
     $("emptyState").style.display = "none";
@@ -659,7 +713,11 @@
         drops: toNum(r[idx.drops]) || 0,
         shipQty: toNum(r[idx.shipQty]) || 0,
         caseEq: toNum(r[idx.caseEq]) || 0,
-        sls: toNum(r[idx.sls]) || 0
+        sls: toNum(r[idx.sls]) || 0,
+        dropsLY: idx.dropsLY!==undefined ? (toNum(r[idx.dropsLY]) || 0) : 0,
+        shipQtyLY: idx.shipQtyLY!==undefined ? (toNum(r[idx.shipQtyLY]) || 0) : 0,
+        caseEqLY: idx.caseEqLY!==undefined ? (toNum(r[idx.caseEqLY]) || 0) : 0,
+        slsLY: idx.slsLY!==undefined ? (toNum(r[idx.slsLY]) || 0) : 0
       });
     }
     state.parsedRows = out;
@@ -811,7 +869,8 @@
     el.classList.toggle("warn", sum===0);
   }
   $("equalizeBtn").addEventListener("click", () => {
-    METRICS.forEach(m => state.weights[m.key] = 25);
+    const even = Math.round(100/METRICS.length);
+    METRICS.forEach(m => state.weights[m.key] = even);
     renderWeights(); rescore();
   });
 
@@ -859,13 +918,21 @@
       const activeMonths = new Set(relevant.map(r => r.monthKey));
       if(activeMonths.size === 0) return;
       const n = activeMonths.size;
-      const sums = {drops:0, shipQty:0, caseEq:0, sls:0};
-      relevant.forEach(r => { sums.drops+=r.drops; sums.shipQty+=r.shipQty; sums.caseEq+=r.caseEq; sums.sls+=r.sls; });
+      const sums = {drops:0, shipQty:0, caseEq:0, sls:0, dropsLY:0, shipQtyLY:0, caseEqLY:0, slsLY:0};
+      relevant.forEach(r => {
+        sums.drops+=r.drops; sums.shipQty+=r.shipQty; sums.caseEq+=r.caseEq; sums.sls+=r.sls;
+        sums.dropsLY+=r.dropsLY; sums.shipQtyLY+=r.shipQtyLY; sums.caseEqLY+=r.caseEqLY; sums.slsLY+=r.slsLY;
+      });
       const latest = custRows.reduce((a,b) => b.monthKey > a.monthKey ? b : a);
+      const drops = sums.drops/n, shipQty = sums.shipQty/n, caseEq = sums.caseEq/n, sls = sums.sls/n;
+      const dropsLY = sums.dropsLY/n, shipQtyLY = sums.shipQtyLY/n, caseEqLY = sums.caseEqLY/n, slsLY = sums.slsLY/n;
       out.push({
         id: custId, label: latest.custName, acctType: latest.acctType,
         site: latest.site || "", region: latest.region || "", activeMonths: n,
-        drops: sums.drops/n, shipQty: sums.shipQty/n, caseEq: sums.caseEq/n, sls: sums.sls/n
+        drops, shipQty, caseEq, sls,
+        salesPerDrop: drops > 0 ? sls/drops : 0,
+        dropsLY, shipQtyLY, caseEqLY, slsLY,
+        salesPerDropLY: dropsLY > 0 ? slsLY/dropsLY : 0
       });
     });
     return out;
@@ -954,7 +1021,8 @@
         avgCases: count ? sumCases/count : 0,
         avgSales: count ? sumSales/count : 0,
         casesPerDrop: sumDrops > 0 ? sumCases/sumDrops : 0,
-        salesPerDrop: sumDrops > 0 ? sumSales/sumDrops : 0
+        salesPerDrop: sumDrops > 0 ? sumSales/sumDrops : 0,
+        maxScore: count ? Math.max(...sub.map(r=>r.score)) : null
       };
     });
     return out;
@@ -992,6 +1060,7 @@
           <span class="tier-name"><span class="tier-dot"></span>${t.label}</span>
           <span class="count">${s.count} customer${s.count===1?"":"s"}</span>
         </div>
+        <div class="hint" style="margin:-6px 0 12px;">Score up to ${s.maxScore===null?"—":(s.maxScore*100).toFixed(1)}</div>
         <div class="tier-metrics">
           <div class="tier-metric"><label>Avg Cases</label><div class="val">${formatNum(s.avgCases)}</div></div>
           <div class="tier-metric"><label>Avg Sales</label><div class="val">${formatCurrency(s.avgSales)}</div></div>
@@ -1005,14 +1074,49 @@
   // ---------- results table ----------
   const PAGE_SIZE = 100;
 
+  // Builds the metric portion of the table/export columns: a plain single
+  // column per metric normally, or a TY / LY / YoY% trio once that metric's
+  // "last year" field is mapped (see metricHasLY).
+  function buildMetricColumns(){
+    const cols = [];
+    METRICS.forEach(m => {
+      if(metricHasLY(m.key)){
+        cols.push({key:m.key, label:m.label+" TY", metric:m, kind:"val"});
+        cols.push({key:LY_OF[m.key], label:m.label+" LY", metric:m, kind:"val"});
+        cols.push({key:m.key+"__yoy", label:m.label+" YoY%", metric:m, kind:"yoy", base:m.key});
+      }else{
+        cols.push({key:m.key, label:m.label, metric:m, kind:"val"});
+      }
+    });
+    return cols;
+  }
+  function metricCellHtml(col, r){
+    if(col.kind === "yoy"){
+      const g = yoyPct(r[col.base], r[LY_OF[col.base]]);
+      if(g === null) return `<td>—</td>`;
+      const cls = g > 0 ? "yoy-pos" : g < 0 ? "yoy-neg" : "";
+      return `<td class="${cls}">${g>0?"+":""}${g.toFixed(1)}%</td>`;
+    }
+    const val = r[col.key];
+    return `<td>${col.metric.format === "currency" ? formatCurrency(val) : formatNum(val)}</td>`;
+  }
+  function metricSortValue(col, r){
+    if(col.kind === "yoy"){
+      const g = yoyPct(r[col.base], r[LY_OF[col.base]]);
+      return g === null ? -Infinity : g;
+    }
+    return r[col.key];
+  }
+
   function renderTable(comp){
     const level = state.cohortLevel;
     const head = $("tableHead");
+    const metricCols = buildMetricColumns();
     let cols = [{key:"rank", label:"Rank"}, {key:"tier", label:"Tier"}, {key:"label", label:"Customer"}];
     if(state.hasSite) cols.push({key:"site", label:"Site"});
     if(state.hasRegion) cols.push({key:"region", label:"Region"});
     cols.push({key:"acctType", label:"Account Type"});
-    METRICS.forEach(m => cols.push({key:m.key, label:m.label}));
+    cols = cols.concat(metricCols);
     cols.push({key:"score", label:"Score"});
 
     head.innerHTML = cols.map(c => `<th data-key="${c.key}">${c.label}</th>`).join("");
@@ -1029,6 +1133,7 @@
       const t = state.searchTerm.toLowerCase();
       rows = rows.filter(r => r.label.toLowerCase().includes(t) || String(r.id).toLowerCase().includes(t));
     }
+    const sortingMetricCol = metricCols.find(c => c.key === state.sortKey);
     rows = rows.slice().sort((a,b) => {
       // Site/Region sorts group same-site/region rows together, using rank as a
       // tiebreak — this is also the default view right after switching cohorts.
@@ -1036,6 +1141,12 @@
         const av = a[state.sortKey] || "", bv = b[state.sortKey] || "";
         if(av !== bv) return av < bv ? -1*state.sortDir : 1*state.sortDir;
         return a.rank - b.rank;
+      }
+      if(sortingMetricCol){
+        const av = metricSortValue(sortingMetricCol, a), bv = metricSortValue(sortingMetricCol, b);
+        if(av < bv) return -1*state.sortDir;
+        if(av > bv) return 1*state.sortDir;
+        return 0;
       }
       let av = a[state.sortKey], bv = b[state.sortKey];
       if(typeof av === "string") av = av.toLowerCase();
@@ -1058,10 +1169,7 @@
       ${state.hasSite ? `<td>${escapeHtml(r.site || "—")}</td>` : ""}
       ${state.hasRegion ? `<td>${escapeHtml(r.region || "—")}</td>` : ""}
       <td>${escapeHtml(r.acctType || "—")}</td>
-      <td>${formatNum(r.drops)}</td>
-      <td>${formatNum(r.shipQty)}</td>
-      <td>${formatNum(r.caseEq)}</td>
-      <td>${formatCurrency(r.sls)}</td>
+      ${metricCols.map(c => metricCellHtml(c, r)).join("")}
       <td><strong>${(r.score*100).toFixed(1)}</strong></td>
     </tr>`).join("");
 
@@ -1117,9 +1225,10 @@
   $("exportCurrentBtn").addEventListener("click", async () => {
     if(!lastComputation) return;
     const level = state.cohortLevel;
+    const metricCols = buildMetricColumns();
     const header = ["Rank","Tier","Customer",
       ...(state.hasSite?["Site"]:[]), ...(state.hasRegion?["Region"]:[]),
-      "Account Type", ...METRICS.map(m=>m.label), "Score"];
+      "Account Type", ...metricCols.map(c=>c.label), "Score"];
     const lines = [header.join(",")];
     const sortField = level === "global" ? null : level; // 'site' | 'region' | null
     const sorted = lastComputation.rows.slice().sort((a,b) => {
@@ -1130,9 +1239,16 @@
       return a.rank - b.rank;
     });
     sorted.forEach(r => {
+      const metricValues = metricCols.map(c => {
+        if(c.kind === "yoy"){
+          const g = yoyPct(r[c.base], r[LY_OF[c.base]]);
+          return g === null ? "" : g.toFixed(2);
+        }
+        return r[c.key].toFixed(2);
+      });
       const row = [r.rank, r.tier, csvEscape(r.label),
         ...(state.hasSite?[csvEscape(r.site)]:[]), ...(state.hasRegion?[csvEscape(r.region)]:[]),
-        csvEscape(r.acctType), ...METRICS.map(m => r[m.key].toFixed(2)), (r.score*100).toFixed(2)];
+        csvEscape(r.acctType), ...metricValues, (r.score*100).toFixed(2)];
       lines.push(row.join(","));
     });
     await downloadCsv("segmentation_" + level + "_" + state.mode + ".csv", lines.join("\n"));
@@ -1211,7 +1327,7 @@
   function applyScenario(name){
     const sc = state.scenarios[name];
     if(!sc) return;
-    state.weights = Object.assign({}, sc.weights);
+    state.weights = Object.assign({}, DEFAULT_WEIGHTS, sc.weights);
     state.topPct = sc.topPct; state.medPct = sc.medPct; state.mode = sc.mode;
     state.cohortLevel = sc.cohortLevel || "global";
     $("topPctInput").value = sc.topPct; $("medPctInput").value = sc.medPct;

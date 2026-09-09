@@ -174,8 +174,11 @@
   .tier-card.low .tier-dot{background:var(--tier-low);} .tier-card.low .tier-name{color:var(--tier-low);}
   .tier-card .count{font-family:var(--font-mono);font-size:12px;color:var(--muted);}
   .tier-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+  .tier-metrics-3col{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;}
   .tier-metric label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;font-weight:600;}
   .tier-metric .val{font-family:var(--font-mono);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .tier-subhead{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+    margin:12px 0 8px;padding-top:10px;border-top:1px solid var(--border);}
 
   /* ---- results table ---- */
   .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
@@ -313,7 +316,7 @@
         <div class="thresholds-stack">
           <div class="thresholds-inputs">
             <div class="control-block">
-              <label class="field">Top &le;</label>
+              <label class="field">High &le;</label>
               <input type="number" id="topPctInput" min="1" max="98" value="20">%
             </div>
             <div class="control-block">
@@ -322,7 +325,7 @@
             </div>
           </div>
           <div>
-            <label class="field" id="tierLabelsRow">Top 1&ndash;20% &middot; Medium 21&ndash;50% &middot; Low 51&ndash;100%</label>
+            <label class="field" id="tierLabelsRow">High 1&ndash;20% &middot; Medium 21&ndash;50% &middot; Low 51&ndash;100%</label>
             <div class="tier-bar"><span class="seg-top" id="segTop"></span><span class="seg-med" id="segMed"></span><span class="seg-low" id="segLow"></span></div>
           </div>
           <button class="secondary" id="equalizeBtn">Equalize weights</button>
@@ -882,7 +885,7 @@
     med = Math.max(top+1, Math.min(99, med));
     $("topPctInput").value = top; $("medPctInput").value = med;
     state.topPct = top; state.medPct = med;
-    $("tierLabelsRow").innerHTML = `Top 1&ndash;${top}% &middot; Medium ${top+1}&ndash;${med}% &middot; Low ${med+1}&ndash;100%`;
+    $("tierLabelsRow").innerHTML = `High 1&ndash;${top}% &middot; Medium ${top+1}&ndash;${med}% &middot; Low ${med+1}&ndash;100%`;
     $("segTop").style.flex = top;
     $("segMed").style.flex = (med - top);
     $("segLow").style.flex = (100 - med);
@@ -1018,11 +1021,15 @@
       const sumDrops = sub.reduce((s,r)=>s+r.drops,0);
       out[t] = {
         count,
+        avgDrops: count ? sumDrops/count : 0,
         avgCases: count ? sumCases/count : 0,
         avgSales: count ? sumSales/count : 0,
         casesPerDrop: sumDrops > 0 ? sumCases/sumDrops : 0,
         salesPerDrop: sumDrops > 0 ? sumSales/sumDrops : 0,
-        maxScore: count ? Math.max(...sub.map(r=>r.score)) : null
+        maxScore: count ? Math.max(...sub.map(r=>r.score)) : null,
+        maxDrops: count ? Math.max(...sub.map(r=>r.drops)) : null,
+        maxCases: count ? Math.max(...sub.map(r=>r.caseEq)) : null,
+        maxSales: count ? Math.max(...sub.map(r=>r.sls)) : null
       };
     });
     return out;
@@ -1050,7 +1057,7 @@
   // ---------- tier summary (pooled across cohorts) ----------
   function renderTierSummary(comp){
     $("summaryPeriodLabel").textContent = state.mode === "lifetime" ? "Monthly Average" : "6-Month Total";
-    const tiers = [{key:"top", label:"Top"}, {key:"med", label:"Medium"}, {key:"low", label:"Low"}];
+    const tiers = [{key:"top", label:"High"}, {key:"med", label:"Medium"}, {key:"low", label:"Low"}];
     const stats = computeTierStats(comp.rows);
     const wrap = $("tierSummary");
     wrap.innerHTML = tiers.map(t => {
@@ -1061,11 +1068,23 @@
           <span class="count">${s.count} customer${s.count===1?"":"s"}</span>
         </div>
         <div class="hint" style="margin:-6px 0 12px;">Score up to ${s.maxScore===null?"—":(s.maxScore*100).toFixed(1)}</div>
-        <div class="tier-metrics">
-          <div class="tier-metric"><label>Avg Cases</label><div class="val">${formatNum(s.avgCases)}</div></div>
-          <div class="tier-metric"><label>Avg Sales</label><div class="val">${formatCurrency(s.avgSales)}</div></div>
+
+        <div class="tier-subhead" style="margin-top:0;padding-top:0;border-top:none;">Averages (per month)</div>
+        <div class="tier-metrics-3col">
+          <div class="tier-metric"><label>Drops</label><div class="val">${formatNum(s.avgDrops)}</div></div>
+          <div class="tier-metric"><label>Cases</label><div class="val">${formatNum(s.avgCases)}</div></div>
+          <div class="tier-metric"><label>Sales</label><div class="val">${formatCurrency(s.avgSales)}</div></div>
+        </div>
+        <div class="tier-metrics" style="margin-top:10px;">
           <div class="tier-metric"><label>Cases / Drop</label><div class="val">${formatNum(s.casesPerDrop)}</div></div>
           <div class="tier-metric"><label>Sales / Drop</label><div class="val">${formatCurrency(s.salesPerDrop)}</div></div>
+        </div>
+
+        <div class="tier-subhead">Upper Bound</div>
+        <div class="tier-metrics-3col">
+          <div class="tier-metric"><label>Drops</label><div class="val">${s.maxDrops===null?"—":formatNum(s.maxDrops)}</div></div>
+          <div class="tier-metric"><label>Cases</label><div class="val">${s.maxCases===null?"—":formatNum(s.maxCases)}</div></div>
+          <div class="tier-metric"><label>Sales</label><div class="val">${s.maxSales===null?"—":formatCurrency(s.maxSales)}</div></div>
         </div>
       </div>`;
     }).join("");
@@ -1164,7 +1183,7 @@
     const body = $("tableBody");
     body.innerHTML = pageRows.map(r => `<tr>
       <td><span class="rank-badge">#${r.rank}</span></td>
-      <td><span class="tier-pill ${r.tier}">${r.tier==="top"?"Top":r.tier==="med"?"Medium":"Low"}</span></td>
+      <td><span class="tier-pill ${r.tier}">${tierLabel(r.tier)}</span></td>
       <td class="cust-name">${escapeHtml(r.label)}</td>
       ${state.hasSite ? `<td>${escapeHtml(r.site || "—")}</td>` : ""}
       ${state.hasRegion ? `<td>${escapeHtml(r.region || "—")}</td>` : ""}
@@ -1246,7 +1265,7 @@
         }
         return r[c.key].toFixed(2);
       });
-      const row = [r.rank, r.tier, csvEscape(r.label),
+      const row = [r.rank, tierLabel(r.tier), csvEscape(r.label),
         ...(state.hasSite?[csvEscape(r.site)]:[]), ...(state.hasRegion?[csvEscape(r.region)]:[]),
         csvEscape(r.acctType), ...metricValues, (r.score*100).toFixed(2)];
       lines.push(row.join(","));
@@ -1281,7 +1300,7 @@
     });
 
     const header = ["Customer","Customer ID","Account Type"];
-    perScenario.forEach(s => header.push(`${s.name} Rank`, `${s.name} Tier`, `${s.name} Score`));
+    perScenario.forEach(s => header.push(`${s.name} Rank`, `${s.name} Tier`, `${s.name} Score`, ...METRICS.map(m => `${s.name} ${m.label}`)));
     const lines = [header.map(csvEscape).join(",")];
 
     roster.slice()
@@ -1290,8 +1309,8 @@
         const row = [csvEscape(r.label), csvEscape(r.id), csvEscape(r.acctType)];
         perScenario.forEach(s => {
           const m = s.map.get(r.id);
-          if(m){ row.push(m.rank, m.tier, (m.score*100).toFixed(2)); }
-          else { row.push("", "not active in window", ""); }
+          if(m){ row.push(m.rank, tierLabel(m.tier), (m.score*100).toFixed(2), ...METRICS.map(met => m[met.key].toFixed(2))); }
+          else { row.push("", "not active in window", "", ...METRICS.map(()=>"")); }
         });
         lines.push(row.join(","));
       });
@@ -1372,7 +1391,7 @@
 
   function renderBreakdownTable(comp, groupBy){
     const entityLabel = groupBy === "site" ? "Site" : "Region";
-    const tiers = [{key:"top",label:"Top",cls:"grp-top"},{key:"med",label:"Medium",cls:"grp-med"},{key:"low",label:"Low",cls:"grp-low"}];
+    const tiers = [{key:"top",label:"High",cls:"grp-top"},{key:"med",label:"Medium",cls:"grp-med"},{key:"low",label:"Low",cls:"grp-low"}];
     const metricCols = [{key:"count",label:"Count"},{key:"avgCases",label:"Avg Cases"},{key:"avgSales",label:"Avg Sales"},{key:"casesPerDrop",label:"Cases/Drop"},{key:"salesPerDrop",label:"Sales/Drop"}];
 
     const rows = comp.perCohort.map(c => {
@@ -1430,7 +1449,7 @@
     const entityLabel = lastBreakdown.groupBy === "site" ? "Site" : "Region";
     const tiers = ["top","med","low"];
     const header = [entityLabel, "Total"];
-    tiers.forEach(t => header.push(t+" Count", t+" AvgCases", t+" AvgSales", t+" CasesPerDrop", t+" SalesPerDrop"));
+    tiers.forEach(t => { const lbl = tierLabel(t); header.push(lbl+" Count", lbl+" AvgCases", lbl+" AvgSales", lbl+" CasesPerDrop", lbl+" SalesPerDrop"); });
     const lines = [header.join(",")];
     lastBreakdown.rows.forEach(r => {
       const row = [csvEscape(r.label), r.total];
@@ -1444,6 +1463,10 @@
   });
 
   // ---------- utils ----------
+  // Internal tier keys stay "top"/"med"/"low" (CSS vars, sort logic, etc. all
+  // key off them) — this is the single place that maps them to the "High"
+  // display name shown in the UI and exports.
+  function tierLabel(t){ return t === "top" ? "High" : t === "med" ? "Medium" : "Low"; }
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
